@@ -1,0 +1,31 @@
+{
+  "name": "catalog",
+  "version": "0.0.1",
+  "description": "Frontend part of the Gowebly project.",
+  "license": "MIT",
+  "browserslist": "> 0.5%, last 2 versions, not dead",
+  "scripts": {
+    "fmt": "prettier --write .",
+    "build": "parcel build ./assets/scripts.js ./assets/styles.css --dist-dir ./static",
+    "dev": "parcel build ./assets/scripts.js ./assets/styles.css --dist-dir ./static --no-optimize",
+    "watch": "parcel watch ./assets/scripts.js ./assets/styles.css --dist-dir ./static --no-optimize"
+  },
+  "dependencies": {
+    "daisyui": "latest",
+    "exceljs": "^4.4.0",
+    "htmx.org": "latest",
+    "tailwindcss": "latest"
+  },
+  "devDependencies": {
+    "@parcel/transformer-css": "latest",
+    "@tailwindcss/forms": "latest",
+    "@tailwindcss/postcss": "latest",
+    "@tailwindcss/typography": "latest",
+    "parcel": "latest",
+    "postcss": "latest",
+    "prettier": "latest"
+  },
+  "overrides": {
+    "lightningcss": "1.30.2"
+  }
+}

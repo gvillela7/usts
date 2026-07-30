@@ -1,0 +1,33 @@
+package os
+
+templ OSTable() {
+	<div id="os-items-container" class="mt-12">
+		<div id="os-items-table" class="hidden">
+			<div class="flex justify-between items-center mb-3">
+				<h3 class="text-sm font-semibold text-gray-700">Itens da OS</h3>
+				<span class="text-sm text-gray-600">Total de USTs: <span id="ust-total" class="font-semibold text-gray-900">0</span></span>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="min-w-full bg-white border border-gray-200 rounded-lg">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Código</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Tarefa</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">UST Item</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">UST Recorrência</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Complexidade</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">UST Fim</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Tipo</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Descrição</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Tarefa Candidata</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Ações</th>
+						</tr>
+					</thead>
+					<tbody id="os-items-tbody">
+						<!-- Rows will be added dynamically via JavaScript -->
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+}

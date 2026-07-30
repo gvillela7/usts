@@ -1,0 +1,235 @@
+package os
+
+import "github.com/gvillela7/usts/internal/repository"
+import "github.com/gvillela7/usts/web/templates/components"
+import "fmt"
+
+templ Form(projectName string, projectID int, sprints []repository.Sprint, catalogs []repository.Catalog, tasks []repository.Task) {
+	<div class="w-full min-h-screen bg-gray-50 flex flex-col items-center justify-start pt-10 px-4">
+		<div class="max-w-[1400px] w-full bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+			<div class="mb-6">
+				<h1 class="text-xl font-bold text-gray-800">Cadastro de OS</h1>
+				<p class="text-sm text-gray-500 mt-1">Projeto: { projectName }</p>
+			</div>
+			
+			<form action="/os/create" method="POST" onsubmit="return submitForm(event)">
+				<div class="mb-4 flex flex-col items-start w-full">
+					<label class="block text-xs font-medium text-gray-600 mb-1">Sprint e Tarefa</label>
+					<div class="flex w-full gap-6 items-end">
+						<!-- Sprints Dropdown -->
+						<div class="relative flex-1" id="custom-dropdown-sprints">
+							<input type="hidden" name="sprint_id" id="sprint_id_input" />
+
+							<button
+								type="button"
+								onclick="toggleDropdown('dropdown-menu-sprints')"
+								style="background-color: white;"
+								class="w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]">
+								<span id="sprint-selected-text" class="text-gray-500 truncate">Sprint</span>
+								<svg class="h-5 w-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+								</svg>
+							</button>
+
+							<div
+								id="dropdown-menu-sprints"
+								style="background-color: white;"
+								class="hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+								for _, sprint := range sprints {
+									<div
+										class="cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150"
+										onclick={ templ.ComponentScript{
+											Call: fmt.Sprintf("selectSprint('%d', '%s')", sprint.ID, sprint.Name),
+										} }
+									>
+										<div class="flex flex-col">
+											<span class="font-bold text-gray-900 block text-base">
+												{ sprint.Name }
+											</span>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+
+						<!-- Add Sprint Button -->
+						<svg
+							class="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
+							onclick="toggleSprintForm()"
+							title="Adicionar nova sprint"
+							aria-hidden="true"
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+						</svg>
+
+						<!-- Tasks Dropdown -->
+						<div class="relative flex-1" id="custom-dropdown-tasks">
+							<input type="hidden" name="task_id" id="task_id_input" />
+
+							<button
+								type="button"
+								onclick="toggleDropdown('dropdown-menu-tasks')"
+								style="background-color: white;"
+								class="w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]">
+								<span id="task-selected-text" class="text-gray-500 truncate">Tarefa</span>
+								<svg class="h-5 w-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+								</svg>
+							</button>
+
+							<div
+								id="dropdown-menu-tasks"
+								style="background-color: white;"
+								class="hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+								for _, task := range tasks {
+									<div
+										class="cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150"
+										onclick={ templ.ComponentScript{
+											Call: fmt.Sprintf("selectTask('%d', '%s')", task.ID, task.Name),
+										} }
+									>
+										<div class="flex flex-col">
+											<span class="font-bold text-gray-900 block text-base">
+												{ task.Name }
+											</span>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+
+						<!-- Add Task Button -->
+						<svg
+							class="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
+							onclick="toggleTaskForm()"
+							title="Adicionar nova tarefa"
+							aria-hidden="true"
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+						</svg>
+					</div>
+					<p class="mt-1 text-xs text-gray-400">Selecione a sprint e a tarefa para habilitar a seleção do código.</p>
+				</div>
+
+				<div class="mb-4 flex flex-col items-start w-full">
+					<label class="block text-xs font-medium text-gray-600 mb-1">Código</label>
+					<div class="flex w-full items-end">
+						<!-- Catalog Dropdown -->
+						<div class="relative flex-1" id="custom-dropdown-catalog">
+							<input type="hidden" name="catalog_id" id="catalog_id_input" />
+
+							<button
+								type="button"
+								onclick="toggleDropdown('dropdown-menu-catalog')"
+								style="background-color: white;"
+								class="w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]">
+								<span id="catalog-selected-text" class="text-gray-500 truncate">Código</span>
+								<svg class="h-5 w-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+								</svg>
+							</button>
+
+							<div
+								id="dropdown-menu-catalog"
+								style="background-color: white;"
+								class="hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+								for _, item := range catalogs {
+									<div
+										class="cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150"
+										onclick={ templ.ComponentScript{
+											Call: fmt.Sprintf("selectCatalog('%d', '%s', '%s', %d, %d)", item.ID, item.Cod, item.Description, item.UstNormal, item.UstNewTech),
+										} }
+									>
+										<div class="flex flex-col">
+											<span class="font-bold text-gray-900 block text-base mb-1">
+												{ item.Cod }
+											</span>
+											<span class="text-gray-600 text-sm block whitespace-normal leading-snug">
+												{ item.Description }
+											</span>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					</div>
+					<p class="mt-1 text-xs text-gray-400">Selecione o código para adicionar à lista.</p>
+				</div>
+
+				<!-- OS Items Table -->
+				@OSTable()
+
+				<div id="message-area" class="mb-4"></div>
+
+				<!-- Hidden template to force Tailwind to generate alert classes -->
+				<div class="hidden">
+					<div class="bg-green-50 border-green-500 text-green-800 text-green-500"></div>
+					<div class="bg-red-50 border-red-500 text-red-800 text-red-500"></div>
+					<div class="bg-yellow-50 border-yellow-500 text-yellow-800 text-yellow-500"></div>
+					<div class="bg-blue-50 border-blue-500 text-blue-800 text-blue-500"></div>
+				</div>
+
+				<div class="flex gap-3 mt-6">
+					<a 
+						href="/"
+						class="flex-1 bg-white hover:bg-gray-50 text-gray-600 font-medium py-1.5 px-4 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition duration-150 ease-in-out text-center text-sm">
+						Voltar
+					</a>
+					<button 
+						type="submit"
+						class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150 ease-in-out text-sm">
+						Criar OS
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<input type="hidden" id="page-project-id" value={ fmt.Sprintf("%d", projectID) } />
+
+	<!-- Sprint Creation Modal -->
+	@components.Modal(
+		"sprint-modal",
+		"Nova Sprint",
+		"Nome da Sprint",
+		"sprint_name",
+		"sprint_name",
+		"Digite o nome da sprint",
+		"Criar",
+		"/sprints/create",
+		"#sprint-modal-message",
+		SprintHiddenFields(projectID),
+	)
+	<!-- Task Creation Modal -->
+	@components.Modal(
+		"task-modal",
+		"Nova Tarefa",
+		"Nome da Tarefa",
+		"task_name",
+		"task_name",
+		"Digite o nome da tarefa",
+		"Criar",
+		"/tasks/create",
+		"#task-modal-message",
+		TaskHiddenFields(projectID),
+	)
+}
+
+templ SprintHiddenFields(projectID int) {
+	<input type="hidden" name="project_id" value={ fmt.Sprintf("%d", projectID) }/>
+}
+
+templ TaskHiddenFields(projectID int) {
+	<input type="hidden" name="project_id" value={ fmt.Sprintf("%d", projectID) }/>
+	<input type="hidden" name="sprint_id" id="task-form-sprint-id" value=""/>
+}

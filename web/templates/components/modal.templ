@@ -1,0 +1,71 @@
+package components
+
+import "strings"
+
+templ Modal(
+	modalId string,
+	title string,
+	inputLabel string,
+	inputName string,
+	inputId string,
+	inputPlaceholder string,
+	buttonText string,
+	htmxEndpoint string,
+	htmxTarget string,
+	hiddenFields templ.Component,
+) {
+	{{ messageId := strings.TrimPrefix(htmxTarget, "#") }}
+	<dialog id={ modalId } class="modal">
+		<div class="modal-box">
+			<h3 class="font-bold text-lg mb-4">{ title }</h3>
+			<!-- Close button (X) -->
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+			<!-- Main form -->
+			<form hx-post={ htmxEndpoint } hx-target={ htmxTarget } hx-swap="innerHTML" hx-on:htmx:after-request="handleModalResponse(event)">
+				if hiddenFields != nil {
+					@hiddenFields
+				}
+				<div class="form-control w-full">
+					<label class="label">
+						<span class="label-text">{ inputLabel }</span>
+					</label>
+					<input
+						type="text"
+						id={ inputId }
+						name={ inputName }
+						placeholder={ inputPlaceholder }
+						class="input input-bordered w-full"
+						required
+					/>
+				</div>
+				<div id={ messageId } class="mt-4 text-sm"></div>
+				<div class="modal-action">
+					<button
+						type="button"
+						class="btn"
+						onclick={ closeModal(modalId) }
+					>
+						Cancelar
+					</button>
+					<button type="submit" class="btn btn-primary">
+						{ buttonText }
+					</button>
+				</div>
+			</form>
+		</div>
+		<!-- Backdrop -->
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+}
+
+script closeModal(modalId string) {
+	document.getElementById(modalId).close();
+}
+
+script openModal(modalId string) {
+	document.getElementById(modalId).showModal();
+}

@@ -1,0 +1,22 @@
+services:
+  usts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    volumes:
+      # Persist the SQLite database across container recreations.
+      - usts_data:/app/database
+      # Keep schema/seed in sync with the repo; these mounts override the volume.
+      - ./database/schema.sql:/app/database/schema.sql:ro
+      - ./database/seed.sql:/app/database/seed.sql:ro
+    networks:
+      - usts_network
+
+volumes:
+  usts_data:
+
+networks:
+  usts_network:

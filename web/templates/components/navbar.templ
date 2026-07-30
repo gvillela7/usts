@@ -1,0 +1,37 @@
+package components
+
+templ Navbar(currentPage string) {
+	<div class="navbar bg-white shadow-sm">
+		<div class="flex-1">
+			<a href="/" class="font-medium transition-colors text-xl">Catálogo</a>
+		</div>
+		<div class="flex-none">
+			<ul class="flex gap-2 px-4">
+				<li>
+					<a
+						href="/"
+						class={ "px-4 py-2 rounded-lg text-sm font-medium transition-colors", templ.KV("bg-blue-100 text-blue-700", currentPage == "home"), templ.KV("text-gray-700 hover:bg-gray-100", currentPage != "home") }
+					>
+						Home
+					</a>
+				</li>
+				<li>
+					<a
+						href="/catalogo"
+						class={ "px-4 py-2 rounded-lg text-sm font-medium transition-colors", templ.KV("bg-blue-100 text-blue-700", currentPage == "catalogo"), templ.KV("text-gray-700 hover:bg-gray-100", currentPage != "catalogo") }
+					>
+						Catálogo
+					</a>
+				</li>
+				<li>
+					<a
+						href="/sprints"
+						class={ "px-4 py-2 rounded-lg text-sm font-medium transition-colors", templ.KV("bg-blue-100 text-blue-700", currentPage == "sprints"), templ.KV("text-gray-700 hover:bg-gray-100", currentPage != "sprints") }
+					>
+						Sprints
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+}

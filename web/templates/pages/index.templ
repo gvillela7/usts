@@ -1,0 +1,91 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/gvillela7/usts/internal/repository"
+	"github.com/gvillela7/usts/web/templates/components"
+)
+
+// MetaTags defines meta tags.
+
+templ MetaTags(keywords, description string) {
+	<meta name="keywords" content={ keywords }/>
+	<meta name="description" content={ description }/>
+}
+
+// styledTextStyles defines CSS styles for component.
+
+css styledTextStyles() {
+	color: #02BF87;
+}
+
+// BodyContent defines HTML content.
+
+templ BodyContent(h1, text string, projects []repository.Project) {
+	<div class="w-full h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+		<div class="container max-w-md bg-white p-8 rounded-lg shadow-md">
+			<h1 class="text-2xl font-bold mb-6 text-center text-gray-800">{ h1 }</h1>
+			<p class="text-gray-600 mb-6 text-center">{ text }</p>
+			
+			<!-- Success/Error Message Area -->
+			<div id="message-area" class="mb-4"></div>
+
+			<!-- Hidden template to force Tailwind to generate alert classes -->
+			<div class="hidden">
+				<div class="bg-green-50 border-green-500 text-green-800 text-green-500"></div>
+				<div class="bg-red-50 border-red-500 text-red-800 text-red-500"></div>
+				<div class="bg-yellow-50 border-yellow-500 text-yellow-800 text-yellow-500"></div>
+				<div class="bg-blue-50 border-blue-500 text-blue-800 text-blue-500"></div>
+				<div class="flex items-center p-4 mb-4 border-l-4 rounded"></div>
+				<div class="flex-shrink-0 w-5 h-5"></div>
+				<div class="ml-3 text-sm font-medium"></div>
+			</div>
+
+			<div class="mb-4">
+				<label for="project-select" class="block text-sm font-medium text-gray-700 mb-2">Selecione o Projeto</label>
+				<select 
+					id="project-select" 
+					name="project_id" 
+					onchange="if(this.value) window.location.href='/os/new?project_id=' + this.value"
+					class="block w-full mt-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border">
+					<option value="">Selecione um projeto...</option>
+					for _, p := range projects {
+						<option value={ templ.EscapeString(fmt.Sprintf("%d", p.ID)) }>{ p.Name }</option>
+					}
+				</select>
+			</div>
+
+			<div class="flex justify-center">
+				<button
+					type="button"
+					onclick="console.log('Opening modal...'); var modal = document.getElementById('create-project-modal'); console.log('Modal element:', modal); console.log('Modal classes:', modal ? modal.className : 'null'); if(modal) { modal.showModal(); console.log('Modal opened, has attribute open:', modal.hasAttribute('open')); } return false;"
+					class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out w-full">
+					Criar Projeto
+				</button>
+			</div>
+		</div>
+	</div>
+	<!-- Modal -->
+	@components.Modal(
+		"create-project-modal",
+		"Criar Novo Projeto",
+		"Nome do Projeto",
+		"project_name",
+		"project_name",
+		"Digite o nome do projeto",
+		"Criar",
+		"/projects/create",
+		"#project-modal-message",
+		nil,
+	)
+}
+
+// BodyScripts defines JavaScript code.
+
+script BodyScripts() {
+	console.log(
+		"You're using Templ package to generate HTML content!",
+		"Edit this JavaScript code in the `./templates/pages/index.templ` file.",
+	);
+}
