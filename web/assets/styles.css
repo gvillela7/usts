@@ -2,11 +2,11 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
-@plugin 'daisyui';
+@plugin 'daisyui' {
+  themes: light --default;
+}
 
-/* User styles */
-
-/* Fix for daisyUI modal with Tailwind v4 */
+/* daisyUI modal + Tailwind v4 */
 .modal:is([open]) {
   pointer-events: auto;
   visibility: visible;
@@ -15,26 +15,14 @@
 
 .modal-box {
   max-width: 32rem;
-  --tw-scale-x: .9;
-  --tw-scale-y: .9;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-  border-radius: var(--rounded-box, 1rem);
-  background-color: var(--color-base-100);
-  padding: 1.5rem;
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-duration: 200ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  width: 91.666667%;
+  border-radius: 1rem;
+  background-color: #fff;
+  padding: 0;
+  width: calc(100% - 2rem);
   max-height: calc(100vh - 5em);
   overflow-y: auto;
   overscroll-behavior: contain;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.modal:is([open]) .modal-box {
-  --tw-scale-x: 1;
-  --tw-scale-y: 1;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
 }
 
 .modal-backdrop {
@@ -44,7 +32,7 @@
   height: 100vh;
   width: 100vw;
   cursor: pointer;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(15, 23, 42, 0.4);
   animation: modal-pop 0.2s ease-out;
 }
 
@@ -55,86 +43,114 @@
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #242424;
-  background-color: #fefef5;
+  color: #0f172a;
+  background-color: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  color: #242424;
-  background-color: #fefef5;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  color: #0f172a;
+  background-color: #f8fafc;
 }
 
 #htmx-result {
   padding: 2rem 0;
 }
 
-.logo {
-  height: 12em;
-  padding: 2em;
-  display: inline;
-  will-change: filter;
-  transition: filter 300ms;
-  filter: drop-shadow(0 0 2em #f3c077aa);
+.app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 50;
+  display: flex;
+  width: 15rem;
+  flex-direction: column;
+  background: #fff;
+  border-right: 1px solid rgb(226 232 240 / 0.8);
+  transform: translateX(-100%);
+  transition: transform 200ms ease;
 }
 
-.content {
-  padding: 2em;
+.app-sidebar.is-open {
+  transform: translateX(0);
 }
 
-.read-the-docs {
-  color: #888888;
+.app-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(15 23 42 / 0.4);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #fefef5;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
+.app-sidebar-backdrop.is-open {
+  display: block;
 }
 
-button:hover {
-  border-color: #646cff;
+@media (min-width: 1024px) {
+  .app-sidebar {
+    transform: none;
+  }
+
+  .app-sidebar-backdrop,
+  .app-sidebar-backdrop.is-open {
+    display: none;
+  }
 }
 
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* OS items table: keep numeric/select fields readable */
+.os-items-grid th,
+.os-items-grid td {
+  vertical-align: middle;
+}
+
+.os-items-grid input[type='number'],
+.os-items-grid select,
+.os-items-grid input[type='text'],
+.os-items-grid textarea {
+  max-width: none;
+}
+
+.os-items-grid input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.os-items-grid input[type='number']::-webkit-outer-spin-button,
+.os-items-grid input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+}
+
+#task-os-edit-table textarea.task-os-field-compact {
+  resize: vertical;
+  min-height: 2.25rem;
+  max-height: 4.5rem;
+  line-height: 1.35;
+}
+
+#task-os-edit-table .os-num-input {
+  width: 3rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+#task-os-edit-table .os-num-input::-webkit-outer-spin-button,
+#task-os-edit-table .os-num-input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+#task-os-edit-table thead th {
+  white-space: nowrap;
+}
+
+#task-os-edit-table tbody td {
+  vertical-align: middle;
 }

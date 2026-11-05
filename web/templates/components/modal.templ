@@ -13,53 +13,80 @@ templ Modal(
 	htmxEndpoint string,
 	htmxTarget string,
 	hiddenFields templ.Component,
+	extraFields templ.Component,
 ) {
 	{{ messageId := strings.TrimPrefix(htmxTarget, "#") }}
 	<dialog id={ modalId } class="modal">
-		<div class="modal-box">
-			<h3 class="font-bold text-lg mb-4">{ title }</h3>
-			<!-- Close button (X) -->
-			<form method="dialog">
-				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-			</form>
-			<!-- Main form -->
-			<form hx-post={ htmxEndpoint } hx-target={ htmxTarget } hx-swap="innerHTML" hx-on:htmx:after-request="handleModalResponse(event)">
+		<div class="modal-box !max-w-md !w-[calc(100%-2rem)] !rounded-2xl !bg-white !p-0 !shadow-xl">
+			<div class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
+				<h3 class="text-lg font-semibold tracking-tight text-slate-900">{ title }</h3>
+				<form method="dialog">
+					<button type="submit" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Fechar">✕</button>
+				</form>
+			</div>
+			<form hx-post={ htmxEndpoint } hx-target={ htmxTarget } hx-swap="innerHTML" hx-on:htmx:after-request="handleModalResponse(event)" class="px-6 py-5">
 				if hiddenFields != nil {
 					@hiddenFields
 				}
-				<div class="form-control w-full">
-					<label class="label">
-						<span class="label-text">{ inputLabel }</span>
-					</label>
-					<input
-						type="text"
-						id={ inputId }
-						name={ inputName }
-						placeholder={ inputPlaceholder }
-						class="input input-bordered w-full"
-						required
-					/>
-				</div>
-				<div id={ messageId } class="mt-4 text-sm"></div>
-				<div class="modal-action">
+				<label for={ inputId } class="mb-1.5 block text-sm font-medium text-slate-700">{ inputLabel }</label>
+				<input
+					type="text"
+					id={ inputId }
+					name={ inputName }
+					placeholder={ inputPlaceholder }
+					class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+					required
+				/>
+				if extraFields != nil {
+					<div class="mt-4">
+						@extraFields
+					</div>
+				}
+				<div id={ messageId } class="mt-3 text-sm"></div>
+				<div class="mt-6 flex justify-end gap-2">
 					<button
 						type="button"
-						class="btn"
+						class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
 						onclick={ closeModal(modalId) }
 					>
 						Cancelar
 					</button>
-					<button type="submit" class="btn btn-primary">
+					<button type="submit" class="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
 						{ buttonText }
 					</button>
 				</div>
 			</form>
 		</div>
-		<!-- Backdrop -->
 		<form method="dialog" class="modal-backdrop">
 			<button>close</button>
 		</form>
 	</dialog>
+}
+
+templ DateRangeFields(startID, endID string) {
+	<div class="grid gap-3 sm:grid-cols-2">
+		<div>
+			<label for={ startID } class="mb-1.5 block text-sm font-medium text-slate-700">Data início</label>
+			<input
+				id={ startID }
+				name="start_date"
+				type="date"
+				required
+				onchange="syncSprintEndMin(this)"
+				class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+			/>
+		</div>
+		<div>
+			<label for={ endID } class="mb-1.5 block text-sm font-medium text-slate-700">Data fim</label>
+			<input
+				id={ endID }
+				name="end_date"
+				type="date"
+				required
+				class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+			/>
+		</div>
+	</div>
 }
 
 script closeModal(modalId string) {

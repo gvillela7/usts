@@ -1,37 +1,175 @@
 package components
 
-templ Navbar(currentPage string) {
-	<div class="navbar bg-white shadow-sm">
-		<div class="flex-1">
-			<a href="/" class="font-medium transition-colors text-xl">Catálogo</a>
+import (
+	"fmt"
+
+	"github.com/gvillela7/usts/internal/repository"
+)
+
+templ Navbar(currentPage string, project *repository.Project) {
+	<header class="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-slate-200/80 bg-white px-4 lg:hidden">
+		<button
+			id="menu-toggle"
+			type="button"
+			class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100"
+			aria-label="Abrir menu"
+			aria-controls="app-sidebar"
+			aria-expanded="false"
+		>
+			<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h16"></path>
+			</svg>
+		</button>
+		<a href="/" class="flex min-w-0 items-center gap-2 text-slate-900 no-underline hover:text-slate-900">
+			<span class="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600 text-[10px] font-bold tracking-wide text-white">US</span>
+			if project != nil {
+				<span class="truncate text-sm font-semibold tracking-tight">{ project.Name }</span>
+			} else {
+				<span class="text-sm font-semibold tracking-tight">USTS</span>
+			}
+		</a>
+	</header>
+	<div id="app-sidebar-backdrop" class="app-sidebar-backdrop"></div>
+	<aside id="app-sidebar" class="app-sidebar" aria-label="Menu principal">
+		<div class="flex h-16 items-center gap-2.5 border-b border-slate-200/80 px-5">
+			<a href="/" class="flex min-w-0 items-center gap-2.5 text-slate-900 no-underline hover:text-slate-900">
+				<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-[11px] font-bold tracking-wide text-white">US</span>
+				<span class="min-w-0">
+					<span class="block text-[15px] font-semibold tracking-tight">USTS</span>
+					if project != nil {
+						<span class="block truncate text-[11px] font-medium text-slate-500">{ project.Name }</span>
+					} else {
+						<span class="block text-[11px] font-medium text-slate-500">Selecione um projeto</span>
+					}
+				</span>
+			</a>
 		</div>
-		<div class="flex-none">
-			<ul class="flex gap-2 px-4">
+		<nav class="flex flex-1 flex-col p-3">
+			<p class="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Projetos</p>
+			<ul class="space-y-1">
 				<li>
-					<a
-						href="/"
-						class={ "px-4 py-2 rounded-lg text-sm font-medium transition-colors", templ.KV("bg-blue-100 text-blue-700", currentPage == "home"), templ.KV("text-gray-700 hover:bg-gray-100", currentPage != "home") }
-					>
-						Home
-					</a>
+					@navItem("/projetos", "Listar projetos", "projetos-lista", currentPage, projectIcon())
 				</li>
 				<li>
-					<a
-						href="/catalogo"
-						class={ "px-4 py-2 rounded-lg text-sm font-medium transition-colors", templ.KV("bg-blue-100 text-blue-700", currentPage == "catalogo"), templ.KV("text-gray-700 hover:bg-gray-100", currentPage != "catalogo") }
-					>
-						Catálogo
-					</a>
-				</li>
-				<li>
-					<a
-						href="/sprints"
-						class={ "px-4 py-2 rounded-lg text-sm font-medium transition-colors", templ.KV("bg-blue-100 text-blue-700", currentPage == "sprints"), templ.KV("text-gray-700 hover:bg-gray-100", currentPage != "sprints") }
-					>
-						Sprints
-					</a>
+					@navItem(projectPath("/catalogo", project), "Catálogo", "catalogo", currentPage, catalogIcon())
 				</li>
 			</ul>
-		</div>
-	</div>
+			if projects := ProjectsFromContext(ctx); len(projects) > 0 {
+				<div class="mt-5 space-y-1">
+					for _, p := range projects {
+						@projectMenu(p, project != nil && project.ID == p.ID, currentPage)
+					}
+				</div>
+			}
+			if project != nil {
+				<div class="mt-auto border-t border-slate-100 px-3 pt-4">
+					<p class="text-[11px] font-medium uppercase tracking-wide text-slate-400">Projeto atual</p>
+					<p class="mt-1 truncate text-sm font-medium text-slate-800">{ project.Name }</p>
+					<a href="/" class="mt-2 inline-block text-xs font-medium text-indigo-600 no-underline hover:text-indigo-800">Trocar projeto</a>
+				</div>
+			}
+		</nav>
+	</aside>
+	@Modal(
+		"create-project-modal",
+		"Criar Novo Projeto",
+		"Nome do Projeto",
+		"project_name",
+		"project_name",
+		"Digite o nome do projeto",
+		"Criar",
+		"/projects/create",
+		"#project-modal-message",
+		nil,
+		nil,
+	)
+}
+
+func projectPath(path string, project *repository.Project) string {
+	if project == nil {
+		return "/"
+	}
+	return fmt.Sprintf("%s?project_id=%d", path, project.ID)
+}
+
+templ navItem(href, label, page, currentPage string, icon templ.Component) {
+	<a
+		href={ templ.URL(href) }
+		class={ "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium no-underline transition-colors", templ.KV("bg-indigo-50 text-indigo-700", currentPage == page), templ.KV("text-slate-600 hover:bg-slate-100 hover:text-slate-900", currentPage != page) }
+	>
+		<span class="h-5 w-5 shrink-0">@icon</span>
+		{ label }
+	</a>
+}
+
+templ projectMenu(p repository.Project, isCurrent bool, currentPage string) {
+	<details class="group" open?={ isCurrent }>
+		<summary class={ "flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] hover:bg-slate-100 [&::-webkit-details-marker]:hidden", templ.KV("text-indigo-700", isCurrent), templ.KV("text-slate-400", !isCurrent) }>
+			<svg class="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-90" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5l7 7-7 7"></path>
+			</svg>
+			<span class="truncate" title={ p.Name }>{ p.Name }</span>
+		</summary>
+		<ul class="mt-1 space-y-1 pb-2">
+			<li>
+				@navItem(fmt.Sprintf("/sprints?project_id=%d", p.ID), "Sprints", "sprints", activePage(isCurrent, currentPage), sprintIcon())
+				<ul class="mt-1 space-y-1">
+					<li>
+						@navSubItem(fmt.Sprintf("/os/new?project_id=%d", p.ID), "Ordem de Serviço", "os", activePage(isCurrent, currentPage))
+					</li>
+				</ul>
+			</li>
+			<li>
+				@navItem(fmt.Sprintf("/os/templates?project_id=%d", p.ID), "Templates OS", "os-templates", activePage(isCurrent, currentPage), templateIcon())
+			</li>
+		</ul>
+	</details>
+}
+
+// activePage only highlights items inside the currently selected project.
+func activePage(isCurrent bool, currentPage string) string {
+	if !isCurrent {
+		return ""
+	}
+	return currentPage
+}
+
+templ navSubItem(href, label, page, currentPage string) {
+	<a
+		href={ templ.URL(href) }
+		class={ "flex items-center gap-2 rounded-lg py-2 pl-11 pr-3 text-[13px] font-medium no-underline transition-colors", templ.KV("bg-indigo-50 text-indigo-700", currentPage == page), templ.KV("text-slate-500 hover:bg-slate-100 hover:text-slate-900", currentPage != page) }
+	>
+		<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60"></span>
+		{ label }
+	</a>
+}
+
+templ projectIcon() {
+	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 7.5A1.5 1.5 0 014.5 6h5.379a1.5 1.5 0 011.06.44l1.122 1.12A1.5 1.5 0 0013.121 8H19.5A1.5 1.5 0 0121 9.5v8A1.5 1.5 0 0119.5 19h-15A1.5 1.5 0 013 17.5v-10z"></path>
+	</svg>
+}
+
+templ osIcon() {
+	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12h6m-6 4h6M8.25 4.5h7.5A2.25 2.25 0 0118 6.75v12A2.25 2.25 0 0115.75 21h-7.5A2.25 2.25 0 016 18.75v-12A2.25 2.25 0 018.25 4.5z"></path>
+	</svg>
+}
+
+templ templateIcon() {
+	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 7h8M8 11h8M8 15h5M6.75 4.5h10.5A2.25 2.25 0 0119.5 6.75v10.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 17.25V6.75A2.25 2.25 0 016.75 4.5z"></path>
+	</svg>
+}
+
+templ catalogIcon() {
+	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4 6h16M4 10h16M4 14h10M4 18h10"></path>
+	</svg>
+}
+
+templ sprintIcon() {
+	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M6 6.75A2.25 2.25 0 018.25 4.5h9A1.5 1.5 0 0118.75 6v12a1.5 1.5 0 01-1.5 1.5h-9A2.25 2.25 0 016 17.25V6.75zM8.25 8.25h7.5M8.25 12h7.5M8.25 15.75h4.5"></path>
+	</svg>
 }

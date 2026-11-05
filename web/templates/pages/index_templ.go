@@ -12,7 +12,6 @@ import (
 	"fmt"
 
 	"github.com/gvillela7/usts/internal/repository"
-	"github.com/gvillela7/usts/web/templates/components"
 )
 
 // MetaTags defines meta tags.
@@ -44,7 +43,7 @@ func MetaTags(keywords, description string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(keywords)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 13, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 12, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -57,7 +56,7 @@ func MetaTags(keywords, description string) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 14, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 13, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -83,7 +82,7 @@ func styledTextStyles() templ.CSSClass {
 }
 
 // BodyContent defines HTML content.
-func BodyContent(h1, text string, projects []repository.Project) templ.Component {
+func BodyContent(h1, text string, projects []repository.Project, selected *repository.Project, errorMessage string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -104,84 +103,109 @@ func BodyContent(h1, text string, projects []repository.Project) templ.Component
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"w-full h-screen bg-gray-100 flex flex-col items-center justify-center p-4\"><div class=\"container max-w-md bg-white p-8 rounded-lg shadow-md\"><h1 class=\"text-2xl font-bold mb-6 text-center text-gray-800\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"w-full min-h-[calc(100vh-3.5rem)] lg:min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6\"><div class=\"w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8\"><div class=\"mb-6 text-center\"><div class=\"mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600\"><svg class=\"h-6 w-6\" viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z\"></path></svg></div><h1 class=\"text-2xl font-semibold tracking-tight text-slate-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(h1)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 28, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 33, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h1><p class=\"text-gray-600 mb-6 text-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h1><p class=\"mt-2 text-sm text-slate-500\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 29, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 34, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p><!-- Success/Error Message Area --><div id=\"message-area\" class=\"mb-4\"></div><!-- Hidden template to force Tailwind to generate alert classes --><div class=\"hidden\"><div class=\"bg-green-50 border-green-500 text-green-800 text-green-500\"></div><div class=\"bg-red-50 border-red-500 text-red-800 text-red-500\"></div><div class=\"bg-yellow-50 border-yellow-500 text-yellow-800 text-yellow-500\"></div><div class=\"bg-blue-50 border-blue-500 text-blue-800 text-blue-500\"></div><div class=\"flex items-center p-4 mb-4 border-l-4 rounded\"></div><div class=\"flex-shrink-0 w-5 h-5\"></div><div class=\"ml-3 text-sm font-medium\"></div></div><div class=\"mb-4\"><label for=\"project-select\" class=\"block text-sm font-medium text-gray-700 mb-2\">Selecione o Projeto</label> <select id=\"project-select\" name=\"project_id\" onchange=\"if(this.value) window.location.href='/os/new?project_id=' + this.value\" class=\"block w-full mt-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 border\"><option value=\"\">Selecione um projeto...</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div><div id=\"message-area\" class=\"mb-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, p := range projects {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<option value=\"")
+		if errorMessage != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"flex items-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.EscapeString(fmt.Sprintf("%d", p.ID)))
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 54, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 40, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 54, Col: 76}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</option>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</select></div><div class=\"flex justify-center\"><button type=\"button\" onclick=\"console.log('Opening modal...'); var modal = document.getElementById('create-project-modal'); console.log('Modal element:', modal); console.log('Modal classes:', modal ? modal.className : 'null'); if(modal) { modal.showModal(); console.log('Modal opened, has attribute open:', modal.hasAttribute('open')); } return false;\" class=\"bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out w-full\">Criar Projeto</button></div></div></div><!-- Modal -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><div><label for=\"project-select\" class=\"mb-2 block text-sm font-medium text-slate-700\">Selecione o projeto</label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = components.Modal(
-			"create-project-modal",
-			"Criar Novo Projeto",
-			"Nome do Projeto",
-			"project_name",
-			"project_name",
-			"Digite o nome do projeto",
-			"Criar",
-			"/projects/create",
-			"#project-modal-message",
-			nil,
-		).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, openSelectedProject())
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<select id=\"project-select\" name=\"project_id\" onchange=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 templ.ComponentScript = openSelectedProject()
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8.Call)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" class=\"block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200\"><option value=\"\" selected>Selecione um projeto...</option> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, p := range projects {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<option value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(templ.EscapeString(fmt.Sprintf("%d", p.ID)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 55, Col: 65}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var10 string
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/index.templ`, Line: 55, Col: 76}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</option>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</select></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -189,17 +213,31 @@ func BodyContent(h1, text string, projects []repository.Project) templ.Component
 	})
 }
 
-// BodyScripts defines JavaScript code.
+func openSelectedProject() templ.ComponentScript {
+	return templ.ComponentScript{
+		Name: `__templ_openSelectedProject_9771`,
+		Function: `function __templ_openSelectedProject_9771(){const select = document.getElementById('project-select');
+	const id = select?.value;
+	const messageArea = document.getElementById('message-area');
+	if (!id) {
+		if (messageArea && window.createAlert) {
+			messageArea.innerHTML = window.createAlert('warning', 'Selecione um projeto antes de continuar.');
+		}
+		return;
+	}
+	window.location.href = '/sprints?project_id=' + encodeURIComponent(id);
+}`,
+		Call:       templ.SafeScript(`__templ_openSelectedProject_9771`),
+		CallInline: templ.SafeScriptInline(`__templ_openSelectedProject_9771`),
+	}
+}
+
 func BodyScripts() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_BodyScripts_3e71`,
-		Function: `function __templ_BodyScripts_3e71(){console.log(
-		"You're using Templ package to generate HTML content!",
-		"Edit this JavaScript code in the ` + "`" + `./templates/pages/index.templ` + "`" + ` file.",
-	);
-}`,
-		Call:       templ.SafeScript(`__templ_BodyScripts_3e71`),
-		CallInline: templ.SafeScriptInline(`__templ_BodyScripts_3e71`),
+		Name:       `__templ_BodyScripts_e3b0`,
+		Function:   `function __templ_BodyScripts_e3b0(){}`,
+		Call:       templ.SafeScript(`__templ_BodyScripts_e3b0`),
+		CallInline: templ.SafeScriptInline(`__templ_BodyScripts_e3b0`),
 	}
 }
 

@@ -1,7 +1,11 @@
 // Dropdown Management
 // Alert function is defined globally in alerts.js
-window.toggleDropdown = function (id) {
-    const dropdowns = ['dropdown-menu-catalog', 'dropdown-menu-tasks', 'dropdown-menu-sprints'];
+window.toggleDropdown = function (id, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const dropdowns = ['dropdown-menu-catalog', 'dropdown-menu-tasks', 'dropdown-menu-sprints', 'dropdown-menu-os-template'];
     dropdowns.forEach(d => {
         if (d !== id) {
             const el = document.getElementById(d);
@@ -35,7 +39,11 @@ window.selectSprint = function (id, name) {
     })
         .then(response => response.json())
         .then(tasks => {
+            if (typeof window.writeSprintTasksJSON === 'function') {
+                window.writeSprintTasksJSON(tasks || [], id);
+            }
             const dropdownMenu = document.getElementById('dropdown-menu-tasks');
+            if (!dropdownMenu) return;
             dropdownMenu.innerHTML = '';
 
             if (tasks && tasks.length > 0) {
@@ -68,34 +76,103 @@ window.selectSprint = function (id, name) {
     }
 };
 
+window.openCatalogDropdown = function () {
+    ['dropdown-menu-tasks', 'dropdown-menu-sprints', 'dropdown-menu-os-template'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    const menu = document.getElementById('dropdown-menu-catalog');
+    if (menu) menu.classList.remove('hidden');
+    const input = document.getElementById('catalog-search');
+    window.filterCatalogOptions(input ? input.value : '');
+};
+
+window.filterCatalogOptions = function (query) {
+    const menu = document.getElementById('dropdown-menu-catalog');
+    if (!menu) return;
+    const q = normalizeSearch(query);
+    let visible = 0;
+    menu.querySelectorAll('[data-catalog-id]').forEach((el) => {
+        const hay = normalizeSearch(`${el.getAttribute('data-catalog-cod') || ''} ${el.getAttribute('data-catalog-desc') || ''}`);
+        const show = !q || hay.includes(q);
+        el.classList.toggle('hidden', !show);
+        if (show) visible += 1;
+    });
+    const empty = document.getElementById('catalog-empty-message');
+    if (empty) empty.classList.toggle('hidden', visible > 0);
+};
+
+window.handleCatalogSearchKey = function (event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const first = document.querySelector('#dropdown-menu-catalog [data-catalog-id]:not(.hidden)');
+        if (first) {
+            if (document.getElementById('os-template-form')) {
+                window.selectTemplateCatalogFromEl(first);
+            } else {
+                window.selectCatalogFromEl(first);
+            }
+        }
+    }
+    if (event.key === 'Escape') {
+        const menu = document.getElementById('dropdown-menu-catalog');
+        if (menu) menu.classList.add('hidden');
+        event.target.blur();
+    }
+};
+
+window.resetCatalogSearch = function () {
+    const input = document.getElementById('catalog-search');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    window.filterCatalogOptions('');
+    const menu = document.getElementById('dropdown-menu-catalog');
+    if (menu) menu.classList.add('hidden');
+};
+
+function normalizeSearch(value) {
+    return String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+window.selectCatalogFromEl = function (el) {
+    if (!el) return;
+    window.selectCatalog(
+        el.getAttribute('data-catalog-id'),
+        el.getAttribute('data-catalog-cod'),
+        el.getAttribute('data-catalog-desc'),
+        parseInt(el.getAttribute('data-ust-normal'), 10),
+        parseInt(el.getAttribute('data-ust-new-tech'), 10)
+    );
+};
+
 window.selectCatalog = function (id, cod, description, ustNormal, ustNewTech) {
     const sprintId = document.getElementById('sprint_id_input').value;
     const sprintName = document.getElementById('sprint-selected-text').textContent;
-    const taskId = document.getElementById('task_id_input').value;
-    const taskName = document.getElementById('task-selected-text').textContent;
+    const taskId = document.getElementById('task_id_input')?.value || '';
+    const taskName = document.getElementById('activity_code_input')?.value || '';
 
-    if (!sprintId || sprintName === 'Selecione a Sprint') {
+    if (!sprintId || sprintName === 'Selecione a Sprint' || sprintName === 'Selecione a sprint' || sprintName === 'Sprint') {
         const messageArea = document.getElementById('message-area');
         messageArea.innerHTML = window.createAlert('warning', 'Selecione uma sprint antes de escolher um código.');
         document.getElementById('dropdown-menu-catalog').classList.add('hidden');
         return;
     }
 
-    if (!taskId || taskName === 'Tarefa') {
-        const messageArea = document.getElementById('message-area');
-        messageArea.innerHTML = window.createAlert('warning', 'Selecione uma tarefa antes de escolher um código.');
-        document.getElementById('dropdown-menu-catalog').classList.add('hidden');
-        return;
-    }
-
     document.getElementById('message-area').innerHTML = '';
-    // addOSRow is defined in table.js
     if (typeof window.addOSRow === 'function') {
         window.addOSRow(id, cod, description, taskId, taskName, sprintId, ustNormal, ustNewTech);
     } else {
         console.error('addOSRow function not found');
     }
     document.getElementById('dropdown-menu-catalog').classList.add('hidden');
+    if (typeof window.resetCatalogSearch === 'function') {
+        window.resetCatalogSearch();
+    }
 };
 
 window.selectTask = function (id, name) {
@@ -105,6 +182,15 @@ window.selectTask = function (id, name) {
     taskText.classList.remove('text-gray-500');
     taskText.classList.add('text-gray-900');
     document.getElementById('dropdown-menu-tasks').classList.add('hidden');
+
+    const tbody = document.getElementById('os-items-tbody');
+    if (!tbody) return;
+    tbody.querySelectorAll('tr').forEach((row) => {
+        const taskInput = row.querySelector('input[name^="task_id_"]');
+        if (taskInput) taskInput.value = id;
+        const nameEl = row.querySelector('.os-row-task-name');
+        if (nameEl) nameEl.textContent = name;
+    });
 };
 
 // Sprint Modal Functions
@@ -137,9 +223,18 @@ window.toggleTaskForm = function () {
 
 // Close dropdown when clicking outside
 document.addEventListener('click', function (event) {
+    const catalogOption = event.target.closest('#dropdown-menu-catalog [data-catalog-id]');
+    if (catalogOption && !document.getElementById('os-template-form')) {
+        event.preventDefault();
+        event.stopPropagation();
+        window.selectCatalogFromEl(catalogOption);
+        return;
+    }
+
     const catalogDropdown = document.getElementById('custom-dropdown-catalog');
     const tasksDropdown = document.getElementById('custom-dropdown-tasks');
     const sprintsDropdown = document.getElementById('custom-dropdown-sprints');
+    const osTemplateDropdown = document.getElementById('custom-dropdown-os-template');
 
     if (catalogDropdown && !catalogDropdown.contains(event.target)) {
         const menu = document.getElementById('dropdown-menu-catalog');
@@ -151,6 +246,10 @@ document.addEventListener('click', function (event) {
     }
     if (sprintsDropdown && !sprintsDropdown.contains(event.target)) {
         const menu = document.getElementById('dropdown-menu-sprints');
+        if (menu) menu.classList.add('hidden');
+    }
+    if (osTemplateDropdown && !osTemplateDropdown.contains(event.target)) {
+        const menu = document.getElementById('dropdown-menu-os-template');
         if (menu) menu.classList.add('hidden');
     }
 });

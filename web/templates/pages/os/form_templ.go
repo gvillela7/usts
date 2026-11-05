@@ -10,9 +10,11 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "github.com/gvillela7/usts/internal/repository"
 import "github.com/gvillela7/usts/web/templates/components"
+import "encoding/json"
 import "fmt"
+import "strings"
 
-func Form(projectName string, projectID int, sprints []repository.Sprint, catalogs []repository.Catalog, tasks []repository.Task) templ.Component {
+func Form(projectName string, projectID int, sprints []repository.Sprint, catalogs []repository.Catalog, tasks []repository.Task, osTemplates []repository.OSTemplate, selectedSprintID int, selectedSprintLabel string, templateKind string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -33,153 +35,443 @@ func Form(projectName string, projectID int, sprints []repository.Sprint, catalo
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"w-full min-h-screen bg-gray-50 flex flex-col items-center justify-start pt-10 px-4\"><div class=\"max-w-[1400px] w-full bg-white p-6 rounded-lg shadow-sm border border-gray-200\"><div class=\"mb-6\"><h1 class=\"text-xl font-bold text-gray-800\">Cadastro de OS</h1><p class=\"text-sm text-gray-500 mt-1\">Projeto: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10\"><div class=\"mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between\"><div><p class=\"text-xs font-medium text-slate-500\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(projectName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 12, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 13, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</p></div><form action=\"/os/create\" method=\"POST\" onsubmit=\"return submitForm(event)\"><div class=\"mb-4 flex flex-col items-start w-full\"><label class=\"block text-xs font-medium text-gray-600 mb-1\">Sprint e Tarefa</label><div class=\"flex w-full gap-6 items-end\"><!-- Sprints Dropdown --><div class=\"relative flex-1\" id=\"custom-dropdown-sprints\"><input type=\"hidden\" name=\"sprint_id\" id=\"sprint_id_input\"> <button type=\"button\" onclick=\"toggleDropdown('dropdown-menu-sprints')\" style=\"background-color: white;\" class=\"w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]\"><span id=\"sprint-selected-text\" class=\"text-gray-500 truncate\">Sprint</span> <svg class=\"h-5 w-5 text-gray-400 flex-shrink-0\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\" clip-rule=\"evenodd\"></path></svg></button><div id=\"dropdown-menu-sprints\" style=\"background-color: white;\" class=\"hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " &gt; Ordem de Serviço &gt; Cadastro de OS</p><div class=\"mt-2 flex items-start gap-3\"><span class=\"mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm\"><svg class=\"h-5 w-5\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"></path></svg></span><div><h1 class=\"text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl\">Cadastro de OS</h1><p class=\"mt-1.5 max-w-2xl text-sm text-slate-500\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if templateKind == repository.OSTemplateKindEpico {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "Ordem de serviço com Template OS Épico. Escolha o template e informe a atividade da sprint para gerar a OS.")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if templateKind == repository.OSTemplateKindOS {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "Ordem de serviço com Template OS. Escolha o template e informe a atividade da sprint para gerar a OS.")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "Ordem de serviço vinculada a este projeto e às suas sprints.")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div></div></div><a href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 templ.SafeURL
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/os/templates?project_id=%d", projectID)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 35, Col: 75}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 no-underline shadow-sm hover:bg-slate-50\"><svg class=\"h-4 w-4 text-slate-500\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z\"></path> <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M15 12a3 3 0 11-6 0 3 3 0 016 0z\"></path></svg> Gerenciar templates</a></div><form action=\"/os/create\" method=\"POST\" onsubmit=\"return submitForm(event)\" class=\"space-y-5\"><input type=\"hidden\" name=\"activity_code\" id=\"activity_code_input\" value=\"\"><!-- 1. Sprint --><section class=\"rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6\"><div class=\"mb-4 flex items-center gap-3\"><span class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white\">1</span><div><h2 class=\"text-sm font-semibold text-slate-900\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if selectedSprintID > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "Sprint (pré-selecionada)")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "Sprint")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</h2><p class=\"text-xs text-slate-500\">Sprint vinculada ao projeto.</p></div></div><div class=\"relative max-w-xl\" id=\"custom-dropdown-sprints\"><input type=\"hidden\" name=\"sprint_id\" id=\"sprint_id_input\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(selectedSprintIDValue(selectedSprintID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 65, Col: 111}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"> <button type=\"button\" onclick=\"toggleDropdown('dropdown-menu-sprints', event)\" class=\"flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500\"><span class=\"flex min-w-0 items-center gap-2.5\"><svg class=\"h-4 w-4 shrink-0 text-indigo-600\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\"></path></svg> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if selectedSprintID > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span id=\"sprint-selected-text\" class=\"truncate font-medium text-slate-900\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(selectedSprintLabel)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 76, Col: 105}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span id=\"sprint-selected-text\" class=\"truncate text-slate-400\">Selecione a sprint</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span> <svg class=\"h-5 w-5 shrink-0 text-slate-400\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\" clip-rule=\"evenodd\"></path></svg></button><div id=\"dropdown-menu-sprints\" class=\"absolute z-50 mt-1 hidden max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, sprint := range sprints {
 			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.ComponentScript{
-				Call: fmt.Sprintf("selectSprint('%d', '%s')", sprint.ID, sprint.Name),
+				Call: fmt.Sprintf("selectSprint('%d', '%s')", sprint.ID, sprint.ListTitle()),
 			})
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150\" onclick=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"cursor-pointer border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-indigo-50\" onclick=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var3 templ.ComponentScript = templ.ComponentScript{
-				Call: fmt.Sprintf("selectSprint('%d', '%s')", sprint.ID, sprint.Name),
+			var templ_7745c5c3_Var6 templ.ComponentScript = templ.ComponentScript{
+				Call: fmt.Sprintf("selectSprint('%d', '%s')", sprint.ID, sprint.ListTitle()),
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3.Call)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6.Call)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"><div class=\"flex flex-col\"><span class=\"font-bold text-gray-900 block text-base\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"><span class=\"block text-sm font-semibold text-slate-900\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(sprint.Name)
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(sprint.ListTitle())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 47, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 96, Col: 85}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></div><!-- Add Sprint Button --><svg class=\"w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer\" onclick=\"toggleSprintForm()\" title=\"Adicionar nova sprint\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" fill=\"none\" viewBox=\"0 0 24 24\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.4\" d=\"M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z\"></path></svg><!-- Tasks Dropdown --><div class=\"relative flex-1\" id=\"custom-dropdown-tasks\"><input type=\"hidden\" name=\"task_id\" id=\"task_id_input\"> <button type=\"button\" onclick=\"toggleDropdown('dropdown-menu-tasks')\" style=\"background-color: white;\" class=\"w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]\"><span id=\"task-selected-text\" class=\"text-gray-500 truncate\">Tarefa</span> <svg class=\"h-5 w-5 text-gray-400 flex-shrink-0\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\" clip-rule=\"evenodd\"></path></svg></button><div id=\"dropdown-menu-tasks\" style=\"background-color: white;\" class=\"hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div></div></section><!-- 2. Código da Atividade Jira --><section class=\"rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6\"><div class=\"mb-4 flex items-center gap-3\"><span class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white\">2</span><div><h2 class=\"text-sm font-semibold text-slate-900\">Código da Atividade Jira <span class=\"text-red-500\">*</span></h2><p class=\"text-xs text-slate-500\">Informe o número da atividade no Jira. Este código não pode ser duplicado em outra OS.</p></div></div><div class=\"grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start\"><div><div class=\"flex h-11 max-w-xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm focus-within:ring-2 focus-within:ring-indigo-500\"><span class=\"flex items-center border-r border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-600\">G2MDS-</span> <input id=\"jira-activity-suffix\" type=\"text\" inputmode=\"numeric\" autocomplete=\"off\" placeholder=\"Ex.: 1234\" class=\"min-w-0 flex-1 border-0 bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400\" oninput=\"syncJiraActivityPreview()\"></div><p class=\"mt-2 text-xs text-slate-500\">Apenas números. Exemplo de código válido: <span class=\"font-semibold text-indigo-600\">G2MDS-1234</span></p></div><div class=\"rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3\"><div class=\"mb-1 flex items-center gap-1.5 text-xs font-medium text-indigo-600\"><svg class=\"h-3.5 w-3.5\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> Pré-visualização</div><p id=\"jira-activity-preview\" class=\"text-lg font-bold tracking-tight text-indigo-700\">G2MDS-0000</p></div></div></section><!-- 3. Responsável --><section class=\"rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6\"><div class=\"mb-4 flex items-center gap-3\"><span class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white\">3</span><div><h2 class=\"text-sm font-semibold text-slate-900\">Responsável <span class=\"text-red-500\">*</span></h2><p class=\"text-xs text-slate-500\">Quem é o responsável por esta OS. Use Outros para informar outro nome.</p></div></div><div class=\"grid max-w-xl gap-3\"><select id=\"responsavel-select\" class=\"h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500\" onchange=\"syncResponsavelOther()\" required><option value=\"\">Selecione o responsável</option> <option value=\"Ane Carvalho\">Ane Carvalho</option> <option value=\"Gustavo Goulart\">Gustavo Goulart</option> <option value=\"Murilo Sampaio\">Murilo Sampaio</option> <option value=\"__other__\">Outros</option></select><div id=\"responsavel-other-wrap\" class=\"hidden\"><input id=\"responsavel-other\" type=\"text\" maxlength=\"120\" placeholder=\"Digite o nome do responsável\" class=\"h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500\"></div></div></section><!-- 4. Template --><section class=\"rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6\"><div class=\"mb-4 flex items-center gap-3\"><span class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white\">4</span><div><h2 class=\"text-sm font-semibold text-slate-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, task := range tasks {
-			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.ComponentScript{
-				Call: fmt.Sprintf("selectTask('%d', '%s')", task.ID, task.Name),
-			})
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(osTemplateFieldLabel(templateKind))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 181, Col: 91}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</h2><p class=\"text-xs text-slate-500\">Selecione o template que será aplicado para esta OS.</p></div></div><div class=\"flex flex-col gap-3 sm:flex-row sm:items-center\"><div class=\"relative flex-1\" id=\"custom-dropdown-os-template\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		defaultTmpl := defaultOSTemplate(osTemplates, templateKind)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<input type=\"hidden\" name=\"os_template_id\" id=\"os_template_id_input\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var9 string
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(defaultOSTemplateID(defaultTmpl))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 188, Col: 115}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" data-auto-apply=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(defaultOSTemplateID(defaultTmpl))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 188, Col: 168}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"> <button type=\"button\" onclick=\"toggleDropdown('dropdown-menu-os-template', event)\" class=\"flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if defaultTmpl != nil {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span id=\"os-template-selected-text\" class=\"truncate text-slate-900\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150\" onclick=\"")
+			var templ_7745c5c3_Var11 string
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(defaultTmpl.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 195, Col: 95}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var5 templ.ComponentScript = templ.ComponentScript{
-				Call: fmt.Sprintf("selectTask('%d', '%s')", task.ID, task.Name),
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5.Call)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"><div class=\"flex flex-col\"><span class=\"font-bold text-gray-900 block text-base\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(task.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 98, Col: 23}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span></div></div>")
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span id=\"os-template-selected-text\" class=\"truncate text-slate-400\">Selecione o template</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></div><!-- Add Task Button --><svg class=\"w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer\" onclick=\"toggleTaskForm()\" title=\"Adicionar nova tarefa\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" fill=\"none\" viewBox=\"0 0 24 24\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.4\" d=\"M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z\"></path></svg></div><p class=\"mt-1 text-xs text-gray-400\">Selecione a sprint e a tarefa para habilitar a seleção do código.</p></div><div class=\"mb-4 flex flex-col items-start w-full\"><label class=\"block text-xs font-medium text-gray-600 mb-1\">Código</label><div class=\"flex w-full items-end\"><!-- Catalog Dropdown --><div class=\"relative flex-1\" id=\"custom-dropdown-catalog\"><input type=\"hidden\" name=\"catalog_id\" id=\"catalog_id_input\"> <button type=\"button\" onclick=\"toggleDropdown('dropdown-menu-catalog')\" style=\"background-color: white;\" class=\"w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]\"><span id=\"catalog-selected-text\" class=\"text-gray-500 truncate\">Código</span> <svg class=\"h-5 w-5 text-gray-400 flex-shrink-0\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\" clip-rule=\"evenodd\"></path></svg></button><div id=\"dropdown-menu-catalog\" style=\"background-color: white;\" class=\"hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<svg class=\"h-5 w-5 shrink-0 text-slate-400\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\" clip-rule=\"evenodd\"></path></svg></button><div id=\"dropdown-menu-os-template\" class=\"absolute z-50 mt-1 hidden max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if showTemplateKind(templateKind, repository.OSTemplateKindEpico) && len(templatesOfKind(osTemplates, repository.OSTemplateKindEpico)) > 0 {
+			if templateKind == "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400\">Template OS Épico</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			for _, tmpl := range templatesOfKind(osTemplates, repository.OSTemplateKindEpico) {
+				templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.ComponentScript{
+					Call: fmt.Sprintf("selectOSTemplate('%d', '%s')", tmpl.ID, tmpl.Name),
+				})
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"cursor-pointer border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-indigo-50\" onclick=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var12 templ.ComponentScript = templ.ComponentScript{
+					Call: fmt.Sprintf("selectOSTemplate('%d', '%s')", tmpl.ID, tmpl.Name),
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12.Call)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"><span class=\"block text-sm font-semibold text-slate-900\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var13 string
+				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 218, Col: 78}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span> <span class=\"mt-0.5 block text-xs text-slate-500\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var14 string
+				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(templateItemCountLabel(tmpl.ItemCount))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 219, Col: 100}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+		}
+		if showTemplateKind(templateKind, repository.OSTemplateKindOS) && len(templatesOfKind(osTemplates, repository.OSTemplateKindOS)) > 0 {
+			if templateKind == "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<div class=\"bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400\">Template OS</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			for _, tmpl := range templatesOfKind(osTemplates, repository.OSTemplateKindOS) {
+				templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.ComponentScript{
+					Call: fmt.Sprintf("selectOSTemplate('%d', '%s')", tmpl.ID, tmpl.Name),
+				})
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div class=\"cursor-pointer border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-indigo-50\" onclick=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var15 templ.ComponentScript = templ.ComponentScript{
+					Call: fmt.Sprintf("selectOSTemplate('%d', '%s')", tmpl.ID, tmpl.Name),
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15.Call)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\"><span class=\"block text-sm font-semibold text-slate-900\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var16 string
+				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(tmpl.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 234, Col: 78}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span> <span class=\"mt-0.5 block text-xs text-slate-500\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var17 string
+				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(templateItemCountLabel(tmpl.ItemCount))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 235, Col: 100}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</span></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+		}
+		if len(osTemplates) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"px-4 py-3 text-sm text-slate-500\">Nenhum template disponível</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div></div><button type=\"button\" onclick=\"applySelectedOSTemplate()\" class=\"inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-indigo-600 bg-white px-4 text-sm font-medium text-indigo-600 hover:bg-indigo-50\"><svg class=\"h-4 w-4\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4\"></path></svg> Aplicar template</button></div><p class=\"mt-3 text-xs text-slate-500\">Os códigos do template serão copiados para esta OS automaticamente.</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(osTemplates) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<p class=\"mt-3 text-xs text-amber-700\">Nenhum template deste tipo neste projeto. <a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 templ.SafeURL
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/os/templates/new?project_id=%d", projectID)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 257, Col: 164}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" class=\"font-medium underline\">Criar template</a>.</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</section><!-- 4. Itens --><section class=\"rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6\"><div class=\"mb-4 flex items-center justify-between gap-3\"><div class=\"flex items-center gap-3\"><span class=\"flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white\">5</span><h2 class=\"text-sm font-semibold text-slate-900\">Itens da OS</h2></div><span class=\"text-sm text-slate-600\">Total de USTs: <span id=\"ust-total\" class=\"font-bold text-indigo-600\">0</span></span></div><div class=\"relative mb-4 hidden max-w-xl\" id=\"custom-dropdown-catalog\" aria-hidden=\"true\"><input type=\"hidden\" name=\"catalog_id\" id=\"catalog_id_input\"> <input id=\"catalog-search\" type=\"text\" autocomplete=\"off\" tabindex=\"-1\" class=\"hidden\" onfocus=\"openCatalogDropdown()\" oninput=\"filterCatalogOptions(this.value)\" onkeydown=\"handleCatalogSearchKey(event)\"><div id=\"dropdown-menu-catalog\" class=\"hidden\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, item := range catalogs {
-			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.ComponentScript{
-				Call: fmt.Sprintf("selectCatalog('%d', '%s', '%s', %d, %d)", item.ID, item.Cod, item.Description, item.UstNormal, item.UstNewTech),
-			})
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<div class=\"catalog-option hidden\" data-catalog-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150\" onclick=\"")
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 287, Col: 52}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 templ.ComponentScript = templ.ComponentScript{
-				Call: fmt.Sprintf("selectCatalog('%d', '%s', '%s', %d, %d)", item.ID, item.Cod, item.Description, item.UstNormal, item.UstNewTech),
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7.Call)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\" data-catalog-cod=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"><div class=\"flex flex-col\"><span class=\"font-bold text-gray-900 block text-base mb-1\">")
+			var templ_7745c5c3_Var20 string
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(item.Cod)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 288, Col: 35}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.Cod)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 155, Col: 22}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" data-catalog-desc=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span> <span class=\"text-gray-600 text-sm block whitespace-normal leading-snug\">")
+			var templ_7745c5c3_Var21 string
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 289, Col: 44}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 158, Col: 30}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" data-ust-normal=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</span></div></div>")
+			var templ_7745c5c3_Var22 string
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.UstNormal))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 290, Col: 59}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" data-ust-new-tech=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var23 string
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.UstNewTech))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 291, Col: 62}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div></div></div><p class=\"mt-1 text-xs text-gray-400\">Selecione o código para adicionar à lista.</p></div><!-- OS Items Table -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<div id=\"catalog-empty-message\" class=\"hidden\"></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -187,20 +479,67 @@ func Form(projectName string, projectID int, sprints []repository.Sprint, catalo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div id=\"message-area\" class=\"mb-4\"></div><!-- Hidden template to force Tailwind to generate alert classes --><div class=\"hidden\"><div class=\"bg-green-50 border-green-500 text-green-800 text-green-500\"></div><div class=\"bg-red-50 border-red-500 text-red-800 text-red-500\"></div><div class=\"bg-yellow-50 border-yellow-500 text-yellow-800 text-yellow-500\"></div><div class=\"bg-blue-50 border-blue-500 text-blue-800 text-blue-500\"></div></div><div class=\"flex gap-3 mt-6\"><a href=\"/\" class=\"flex-1 bg-white hover:bg-gray-50 text-gray-600 font-medium py-1.5 px-4 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition duration-150 ease-in-out text-center text-sm\">Voltar</a> <button type=\"submit\" class=\"flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150 ease-in-out text-sm\">Criar OS</button></div></form></div></div><input type=\"hidden\" id=\"page-project-id\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div id=\"message-area\" class=\"mt-4\"></div></section><div class=\"hidden\"><div class=\"bg-green-50 border-green-500 text-green-800 text-green-500\"></div><div class=\"bg-red-50 border-red-500 text-red-800 text-red-500\"></div><div class=\"bg-yellow-50 border-yellow-500 text-yellow-800 text-yellow-500\"></div><div class=\"bg-blue-50 border-blue-500 text-blue-800 text-blue-500\"></div></div><div class=\"flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between\"><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", projectID))
+		var templ_7745c5c3_Var24 templ.SafeURL
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(osBackURL(projectID, selectedSprintID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 198, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 311, Col: 61}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"><!-- Sprint Creation Modal -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\" class=\"inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-5 text-sm font-medium text-indigo-700 no-underline hover:bg-indigo-50\"><svg class=\"h-4 w-4\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M10 19l-7-7m0 0l7-7m-7 7h18\"></path></svg> Voltar</a> <button type=\"submit\" class=\"inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-8 text-sm font-medium text-white hover:bg-indigo-700 sm:w-auto sm:min-w-[220px]\"><svg class=\"h-4 w-4\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" aria-hidden=\"true\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.8\" d=\"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"></path></svg> Criar OS</button></div></form></div><input type=\"hidden\" id=\"page-project-id\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", projectID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 332, Col: 79}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\"> <input type=\"hidden\" id=\"template_kind_input\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var26 string
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(templateKind)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 333, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\"><div id=\"sprint-tasks-json\" hidden>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.Raw(sprintTasksJSON(tasks)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</div><!-- Hidden task dropdown hooks kept for legacy JS helpers --><input type=\"hidden\" name=\"task_id\" id=\"task_id_input\" value=\"\"> <span id=\"task-selected-text\" class=\"hidden\">Tarefa</span><div id=\"dropdown-menu-tasks\" class=\"hidden\"></div><input type=\"hidden\" id=\"task-form-sprint-id\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var27 string
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(selectedSprintIDValue(selectedSprintID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 341, Col: 94}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -214,26 +553,8 @@ func Form(projectName string, projectID int, sprints []repository.Sprint, catalo
 			"Criar",
 			"/sprints/create",
 			"#sprint-modal-message",
-			SprintHiddenFields(projectID),
-		).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<!-- Task Creation Modal -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = components.Modal(
-			"task-modal",
-			"Nova Tarefa",
-			"Nome da Tarefa",
-			"task_name",
-			"task_name",
-			"Digite o nome da tarefa",
-			"Criar",
-			"/tasks/create",
-			"#task-modal-message",
-			TaskHiddenFields(projectID),
+			SprintHiddenFields(projectID, selectedSprintID, templateKind),
+			components.DateRangeFields("sprint_start_date", "sprint_end_date"),
 		).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -242,7 +563,7 @@ func Form(projectName string, projectID int, sprints []repository.Sprint, catalo
 	})
 }
 
-func SprintHiddenFields(projectID int) templ.Component {
+func SprintHiddenFields(projectID int, selectedSprintID int, templateKind string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -258,25 +579,38 @@ func SprintHiddenFields(projectID int) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var11 == nil {
-			templ_7745c5c3_Var11 = templ.NopComponent
+		templ_7745c5c3_Var28 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var28 == nil {
+			templ_7745c5c3_Var28 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<input type=\"hidden\" name=\"project_id\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<input type=\"hidden\" name=\"project_id\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", projectID))
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", projectID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 229, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 359, Col: 76}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\"> <input type=\"hidden\" name=\"return_to\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var30 string
+		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(osNewReturnTo(projectID, selectedSprintID, templateKind))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 360, Col: 103}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -284,46 +618,94 @@ func SprintHiddenFields(projectID int) templ.Component {
 	})
 }
 
-func TaskHiddenFields(projectID int) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var13 == nil {
-			templ_7745c5c3_Var13 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<input type=\"hidden\" name=\"project_id\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", projectID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/pages/os/form.templ`, Line: 233, Col: 76}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"> <input type=\"hidden\" name=\"sprint_id\" id=\"task-form-sprint-id\" value=\"\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
+func selectedSprintIDValue(id int) string {
+	if id <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", id)
+}
+
+func osNewReturnTo(projectID int, sprintID int, templateKind string) string {
+	url := fmt.Sprintf("/os/new?project_id=%d", projectID)
+	if sprintID > 0 {
+		url += fmt.Sprintf("&sprint_id=%d", sprintID)
+	}
+	if templateKind != "" {
+		url += "&template_kind=" + templateKind
+	}
+	return url
+}
+
+func osBackURL(projectID int, sprintID int) string {
+	if sprintID > 0 {
+		return fmt.Sprintf("/sprints?project_id=%d", projectID)
+	}
+	return fmt.Sprintf("/os/new?project_id=%d", projectID)
+}
+
+func osTemplateFieldLabel(kind string) string {
+	if kind == repository.OSTemplateKindEpico {
+		return "Template OS Épico"
+	}
+	if kind == repository.OSTemplateKindOS {
+		return "Template OS"
+	}
+	return "Template de OS"
+}
+
+func showTemplateKind(selectedKind string, kind string) bool {
+	return selectedKind == "" || selectedKind == kind
+}
+
+func defaultOSTemplate(templates []repository.OSTemplate, kind string) *repository.OSTemplate {
+	if len(templates) == 0 {
 		return nil
-	})
+	}
+	preferred := "TEMPLATE_OS"
+	if kind == repository.OSTemplateKindEpico {
+		preferred = "TEMPLATE_OS_EPIC"
+	}
+	for i := range templates {
+		if strings.EqualFold(strings.TrimSpace(templates[i].Name), preferred) {
+			return &templates[i]
+		}
+	}
+	if kind == repository.OSTemplateKindOS {
+		for i := range templates {
+			name := strings.ToUpper(strings.TrimSpace(templates[i].Name))
+			if strings.Contains(name, "EPIC") || strings.Contains(name, "ÉPICO") || strings.Contains(name, "EPICO") {
+				continue
+			}
+			if name == "TEMPLATE_OS" || strings.Contains(name, "TEMPLATE_OS") || strings.Contains(name, "TEMPLATE OS") {
+				return &templates[i]
+			}
+		}
+	}
+	return &templates[0]
+}
+
+func defaultOSTemplateID(tmpl *repository.OSTemplate) string {
+	if tmpl == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d", tmpl.ID)
+}
+
+func sprintTasksJSON(tasks []repository.Task) string {
+	type row struct {
+		ID        int    `json:"ID"`
+		Name      string `json:"Name"`
+		SortOrder int    `json:"SortOrder"`
+	}
+	out := make([]row, 0, len(tasks))
+	for _, t := range tasks {
+		out = append(out, row{ID: t.ID, Name: t.Name, SortOrder: t.SortOrder})
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "[]"
+	}
+	return string(b)
 }
 
 var _ = templruntime.GeneratedTemplate
