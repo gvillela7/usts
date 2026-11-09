@@ -2,202 +2,344 @@ package os
 
 import "github.com/gvillela7/usts/internal/repository"
 import "github.com/gvillela7/usts/web/templates/components"
+import "encoding/json"
 import "fmt"
+import "strings"
 
-templ Form(projectName string, projectID int, sprints []repository.Sprint, catalogs []repository.Catalog, tasks []repository.Task) {
-	<div class="w-full min-h-screen bg-gray-50 flex flex-col items-center justify-start pt-10 px-4">
-		<div class="max-w-[1400px] w-full bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-			<div class="mb-6">
-				<h1 class="text-xl font-bold text-gray-800">Cadastro de OS</h1>
-				<p class="text-sm text-gray-500 mt-1">Projeto: { projectName }</p>
+templ Form(projectName string, projectID int, sprints []repository.Sprint, catalogs []repository.Catalog, tasks []repository.Task, osTemplates []repository.OSTemplate, selectedSprintID int, selectedSprintLabel string, templateKind string) {
+	<div class="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10">
+		<div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+			<div>
+				<p class="text-xs font-medium text-slate-500">{ projectName } &gt; Ordem de Serviço &gt; Cadastro de OS</p>
+				<div class="mt-2 flex items-start gap-3">
+					<span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+						<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+						</svg>
+					</span>
+					<div>
+						<h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Cadastro de OS</h1>
+						<p class="mt-1.5 max-w-2xl text-sm text-slate-500">
+							if templateKind == repository.OSTemplateKindEpico {
+								Ordem de serviço com Template OS Épico. Escolha o template e informe a atividade da sprint para gerar a OS.
+							} else if templateKind == repository.OSTemplateKindOS {
+								Ordem de serviço com Template OS. Escolha o template e informe a atividade da sprint para gerar a OS.
+							} else {
+								Ordem de serviço vinculada a este projeto e às suas sprints.
+							}
+						</p>
+					</div>
+				</div>
 			</div>
-			
-			<form action="/os/create" method="POST" onsubmit="return submitForm(event)">
-				<div class="mb-4 flex flex-col items-start w-full">
-					<label class="block text-xs font-medium text-gray-600 mb-1">Sprint e Tarefa</label>
-					<div class="flex w-full gap-6 items-end">
-						<!-- Sprints Dropdown -->
-						<div class="relative flex-1" id="custom-dropdown-sprints">
-							<input type="hidden" name="sprint_id" id="sprint_id_input" />
+			<a
+				href={ templ.URL(fmt.Sprintf("/os/templates?project_id=%d", projectID)) }
+				class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 no-underline shadow-sm hover:bg-slate-50"
+			>
+				<svg class="h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+				</svg>
+				Gerenciar templates
+			</a>
+		</div>
 
-							<button
-								type="button"
-								onclick="toggleDropdown('dropdown-menu-sprints')"
-								style="background-color: white;"
-								class="w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]">
-								<span id="sprint-selected-text" class="text-gray-500 truncate">Sprint</span>
-								<svg class="h-5 w-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-								</svg>
-							</button>
+		<form action="/os/create" method="POST" onsubmit="return submitForm(event)" class="space-y-5">
+			<input type="hidden" name="activity_code" id="activity_code_input" value=""/>
 
-							<div
-								id="dropdown-menu-sprints"
-								style="background-color: white;"
-								class="hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-								for _, sprint := range sprints {
-									<div
-										class="cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150"
-										onclick={ templ.ComponentScript{
-											Call: fmt.Sprintf("selectSprint('%d', '%s')", sprint.ID, sprint.Name),
-										} }
-									>
-										<div class="flex flex-col">
-											<span class="font-bold text-gray-900 block text-base">
-												{ sprint.Name }
-											</span>
-										</div>
-									</div>
-								}
-							</div>
-						</div>
-
-						<!-- Add Sprint Button -->
-						<svg
-							class="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
-							onclick="toggleSprintForm()"
-							title="Adicionar nova sprint"
-							aria-hidden="true"
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
-							<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-						</svg>
-
-						<!-- Tasks Dropdown -->
-						<div class="relative flex-1" id="custom-dropdown-tasks">
-							<input type="hidden" name="task_id" id="task_id_input" />
-
-							<button
-								type="button"
-								onclick="toggleDropdown('dropdown-menu-tasks')"
-								style="background-color: white;"
-								class="w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]">
-								<span id="task-selected-text" class="text-gray-500 truncate">Tarefa</span>
-								<svg class="h-5 w-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-								</svg>
-							</button>
-
-							<div
-								id="dropdown-menu-tasks"
-								style="background-color: white;"
-								class="hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-								for _, task := range tasks {
-									<div
-										class="cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150"
-										onclick={ templ.ComponentScript{
-											Call: fmt.Sprintf("selectTask('%d', '%s')", task.ID, task.Name),
-										} }
-									>
-										<div class="flex flex-col">
-											<span class="font-bold text-gray-900 block text-base">
-												{ task.Name }
-											</span>
-										</div>
-									</div>
-								}
-							</div>
-						</div>
-
-						<!-- Add Task Button -->
-						<svg
-							class="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
-							onclick="toggleTaskForm()"
-							title="Adicionar nova tarefa"
-							aria-hidden="true"
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
-							<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-						</svg>
+			<!-- 1. Sprint -->
+			<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+				<div class="mb-4 flex items-center gap-3">
+					<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">1</span>
+					<div>
+						<h2 class="text-sm font-semibold text-slate-900">
+							if selectedSprintID > 0 {
+								Sprint (pré-selecionada)
+							} else {
+								Sprint
+							}
+						</h2>
+						<p class="text-xs text-slate-500">Sprint vinculada ao projeto.</p>
 					</div>
-					<p class="mt-1 text-xs text-gray-400">Selecione a sprint e a tarefa para habilitar a seleção do código.</p>
 				</div>
-
-				<div class="mb-4 flex flex-col items-start w-full">
-					<label class="block text-xs font-medium text-gray-600 mb-1">Código</label>
-					<div class="flex w-full items-end">
-						<!-- Catalog Dropdown -->
-						<div class="relative flex-1" id="custom-dropdown-catalog">
-							<input type="hidden" name="catalog_id" id="catalog_id_input" />
-
-							<button
-								type="button"
-								onclick="toggleDropdown('dropdown-menu-catalog')"
-								style="background-color: white;"
-								class="w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm flex justify-between items-center h-[38px]">
-								<span id="catalog-selected-text" class="text-gray-500 truncate">Código</span>
-								<svg class="h-5 w-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-								</svg>
-							</button>
-
+				<div class="relative max-w-xl" id="custom-dropdown-sprints">
+					<input type="hidden" name="sprint_id" id="sprint_id_input" value={ selectedSprintIDValue(selectedSprintID) }/>
+					<button
+						type="button"
+						onclick="toggleDropdown('dropdown-menu-sprints', event)"
+						class="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					>
+						<span class="flex min-w-0 items-center gap-2.5">
+							<svg class="h-4 w-4 shrink-0 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+							</svg>
+							if selectedSprintID > 0 {
+								<span id="sprint-selected-text" class="truncate font-medium text-slate-900">{ selectedSprintLabel }</span>
+							} else {
+								<span id="sprint-selected-text" class="truncate text-slate-400">Selecione a sprint</span>
+							}
+						</span>
+						<svg class="h-5 w-5 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+							<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+						</svg>
+					</button>
+					<div
+						id="dropdown-menu-sprints"
+						class="absolute z-50 mt-1 hidden max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
+					>
+						for _, sprint := range sprints {
 							<div
-								id="dropdown-menu-catalog"
-								style="background-color: white;"
-								class="hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-								for _, item := range catalogs {
+								class="cursor-pointer border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-indigo-50"
+								onclick={ templ.ComponentScript{
+									Call: fmt.Sprintf("selectSprint('%d', '%s')", sprint.ID, sprint.ListTitle()),
+								} }
+							>
+								<span class="block text-sm font-semibold text-slate-900">{ sprint.ListTitle() }</span>
+							</div>
+						}
+					</div>
+				</div>
+			</section>
+
+			<!-- 2. Código da Atividade Jira -->
+			<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+				<div class="mb-4 flex items-center gap-3">
+					<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">2</span>
+					<div>
+						<h2 class="text-sm font-semibold text-slate-900">Código da Atividade Jira <span class="text-red-500">*</span></h2>
+						<p class="text-xs text-slate-500">Informe o número da atividade no Jira. Este código não pode ser duplicado em outra OS.</p>
+					</div>
+				</div>
+				<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
+					<div>
+						<div class="flex h-11 max-w-xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm focus-within:ring-2 focus-within:ring-indigo-500">
+							<span class="flex items-center border-r border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-600">G2MDS-</span>
+							<input
+								id="jira-activity-suffix"
+								type="text"
+								inputmode="numeric"
+								autocomplete="off"
+								placeholder="Ex.: 1234"
+								class="min-w-0 flex-1 border-0 bg-white px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+								oninput="syncJiraActivityPreview()"
+							/>
+						</div>
+						<p class="mt-2 text-xs text-slate-500">
+							Apenas números. Exemplo de código válido: <span class="font-semibold text-indigo-600">G2MDS-1234</span>
+						</p>
+					</div>
+					<div class="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+						<div class="mb-1 flex items-center gap-1.5 text-xs font-medium text-indigo-600">
+							<svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							Pré-visualização
+						</div>
+						<p id="jira-activity-preview" class="text-lg font-bold tracking-tight text-indigo-700">G2MDS-0000</p>
+					</div>
+				</div>
+			</section>
+
+			<!-- 3. Responsável -->
+			<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+				<div class="mb-4 flex items-center gap-3">
+					<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">3</span>
+					<div>
+						<h2 class="text-sm font-semibold text-slate-900">Responsável <span class="text-red-500">*</span></h2>
+						<p class="text-xs text-slate-500">Quem é o responsável por esta OS. Use Outros para informar outro nome.</p>
+					</div>
+				</div>
+				<div class="grid max-w-xl gap-3">
+					<select
+						id="responsavel-select"
+						class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						onchange="syncResponsavelOther()"
+						required
+					>
+						<option value="">Selecione o responsável</option>
+						<option value="Ane Carvalho">Ane Carvalho</option>
+						<option value="Gustavo Goulart">Gustavo Goulart</option>
+						<option value="Murilo Sampaio">Murilo Sampaio</option>
+						<option value="__other__">Outros</option>
+					</select>
+					<div id="responsavel-other-wrap" class="hidden">
+						<input
+							id="responsavel-other"
+							type="text"
+							maxlength="120"
+							placeholder="Digite o nome do responsável"
+							class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						/>
+					</div>
+				</div>
+			</section>
+
+			<!-- 4. Template -->
+			<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+				<div class="mb-4 flex items-center gap-3">
+					<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">4</span>
+					<div>
+						<h2 class="text-sm font-semibold text-slate-900">{ osTemplateFieldLabel(templateKind) }</h2>
+						<p class="text-xs text-slate-500">Selecione o template que será aplicado para esta OS.</p>
+					</div>
+				</div>
+				<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+					<div class="relative flex-1" id="custom-dropdown-os-template">
+						{{ defaultTmpl := defaultOSTemplate(osTemplates, templateKind) }}
+						<input type="hidden" name="os_template_id" id="os_template_id_input" value={ defaultOSTemplateID(defaultTmpl) } data-auto-apply={ defaultOSTemplateID(defaultTmpl) }/>
+						<button
+							type="button"
+							onclick="toggleDropdown('dropdown-menu-os-template', event)"
+							class="flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-left text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						>
+							if defaultTmpl != nil {
+								<span id="os-template-selected-text" class="truncate text-slate-900">{ defaultTmpl.Name }</span>
+							} else {
+								<span id="os-template-selected-text" class="truncate text-slate-400">Selecione o template</span>
+							}
+							<svg class="h-5 w-5 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+							</svg>
+						</button>
+						<div
+							id="dropdown-menu-os-template"
+							class="absolute z-50 mt-1 hidden max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
+						>
+							if showTemplateKind(templateKind, repository.OSTemplateKindEpico) && len(templatesOfKind(osTemplates, repository.OSTemplateKindEpico)) > 0 {
+								if templateKind == "" {
+									<div class="bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Template OS Épico</div>
+								}
+								for _, tmpl := range templatesOfKind(osTemplates, repository.OSTemplateKindEpico) {
 									<div
-										class="cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150"
+										class="cursor-pointer border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-indigo-50"
 										onclick={ templ.ComponentScript{
-											Call: fmt.Sprintf("selectCatalog('%d', '%s', '%s', %d, %d)", item.ID, item.Cod, item.Description, item.UstNormal, item.UstNewTech),
+											Call: fmt.Sprintf("selectOSTemplate('%d', '%s')", tmpl.ID, tmpl.Name),
 										} }
 									>
-										<div class="flex flex-col">
-											<span class="font-bold text-gray-900 block text-base mb-1">
-												{ item.Cod }
-											</span>
-											<span class="text-gray-600 text-sm block whitespace-normal leading-snug">
-												{ item.Description }
-											</span>
-										</div>
+										<span class="block text-sm font-semibold text-slate-900">{ tmpl.Name }</span>
+										<span class="mt-0.5 block text-xs text-slate-500">{ templateItemCountLabel(tmpl.ItemCount) }</span>
 									</div>
 								}
-							</div>
+							}
+							if showTemplateKind(templateKind, repository.OSTemplateKindOS) && len(templatesOfKind(osTemplates, repository.OSTemplateKindOS)) > 0 {
+								if templateKind == "" {
+									<div class="bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Template OS</div>
+								}
+								for _, tmpl := range templatesOfKind(osTemplates, repository.OSTemplateKindOS) {
+									<div
+										class="cursor-pointer border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-indigo-50"
+										onclick={ templ.ComponentScript{
+											Call: fmt.Sprintf("selectOSTemplate('%d', '%s')", tmpl.ID, tmpl.Name),
+										} }
+									>
+										<span class="block text-sm font-semibold text-slate-900">{ tmpl.Name }</span>
+										<span class="mt-0.5 block text-xs text-slate-500">{ templateItemCountLabel(tmpl.ItemCount) }</span>
+									</div>
+								}
+							}
+							if len(osTemplates) == 0 {
+								<div class="px-4 py-3 text-sm text-slate-500">Nenhum template disponível</div>
+							}
 						</div>
 					</div>
-					<p class="mt-1 text-xs text-gray-400">Selecione o código para adicionar à lista.</p>
-				</div>
-
-				<!-- OS Items Table -->
-				@OSTable()
-
-				<div id="message-area" class="mb-4"></div>
-
-				<!-- Hidden template to force Tailwind to generate alert classes -->
-				<div class="hidden">
-					<div class="bg-green-50 border-green-500 text-green-800 text-green-500"></div>
-					<div class="bg-red-50 border-red-500 text-red-800 text-red-500"></div>
-					<div class="bg-yellow-50 border-yellow-500 text-yellow-800 text-yellow-500"></div>
-					<div class="bg-blue-50 border-blue-500 text-blue-800 text-blue-500"></div>
-				</div>
-
-				<div class="flex gap-3 mt-6">
-					<a 
-						href="/"
-						class="flex-1 bg-white hover:bg-gray-50 text-gray-600 font-medium py-1.5 px-4 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition duration-150 ease-in-out text-center text-sm">
-						Voltar
-					</a>
-					<button 
-						type="submit"
-						class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150 ease-in-out text-sm">
-						Criar OS
+					<button
+						type="button"
+						onclick="applySelectedOSTemplate()"
+						class="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-indigo-600 bg-white px-4 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+					>
+						<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+						</svg>
+						Aplicar template
 					</button>
 				</div>
-			</form>
-		</div>
+				<p class="mt-3 text-xs text-slate-500">Os códigos do template serão copiados para esta OS automaticamente.</p>
+				if len(osTemplates) == 0 {
+					<p class="mt-3 text-xs text-amber-700">Nenhum template deste tipo neste projeto. <a href={ templ.URL(fmt.Sprintf("/os/templates/new?project_id=%d", projectID)) } class="font-medium underline">Criar template</a>.</p>
+				}
+			</section>
+
+			<!-- 4. Itens -->
+			<section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+				<div class="mb-4 flex items-center justify-between gap-3">
+					<div class="flex items-center gap-3">
+						<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">5</span>
+						<h2 class="text-sm font-semibold text-slate-900">Itens da OS</h2>
+					</div>
+					<span class="text-sm text-slate-600">Total de USTs: <span id="ust-total" class="font-bold text-indigo-600">0</span></span>
+				</div>
+
+				<div class="relative mb-4 hidden max-w-xl" id="custom-dropdown-catalog" aria-hidden="true">
+					<input type="hidden" name="catalog_id" id="catalog_id_input"/>
+					<input
+						id="catalog-search"
+						type="text"
+						autocomplete="off"
+						tabindex="-1"
+						class="hidden"
+						onfocus="openCatalogDropdown()"
+						oninput="filterCatalogOptions(this.value)"
+						onkeydown="handleCatalogSearchKey(event)"
+					/>
+					<div id="dropdown-menu-catalog" class="hidden">
+						for _, item := range catalogs {
+							<div
+								class="catalog-option hidden"
+								data-catalog-id={ fmt.Sprintf("%d", item.ID) }
+								data-catalog-cod={ item.Cod }
+								data-catalog-desc={ item.Description }
+								data-ust-normal={ fmt.Sprintf("%d", item.UstNormal) }
+								data-ust-new-tech={ fmt.Sprintf("%d", item.UstNewTech) }
+							></div>
+						}
+						<div id="catalog-empty-message" class="hidden"></div>
+					</div>
+				</div>
+
+				@OSTable()
+				<div id="message-area" class="mt-4"></div>
+			</section>
+
+			<div class="hidden">
+				<div class="bg-green-50 border-green-500 text-green-800 text-green-500"></div>
+				<div class="bg-red-50 border-red-500 text-red-800 text-red-500"></div>
+				<div class="bg-yellow-50 border-yellow-500 text-yellow-800 text-yellow-500"></div>
+				<div class="bg-blue-50 border-blue-500 text-blue-800 text-blue-500"></div>
+			</div>
+
+			<div class="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+				<a
+					href={ templ.URL(osBackURL(projectID, selectedSprintID)) }
+					class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-5 text-sm font-medium text-indigo-700 no-underline hover:bg-indigo-50"
+				>
+					<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+					</svg>
+					Voltar
+				</a>
+				<button
+					type="submit"
+					class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-8 text-sm font-medium text-white hover:bg-indigo-700 sm:w-auto sm:min-w-[220px]"
+				>
+					<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+					</svg>
+					Criar OS
+				</button>
+			</div>
+		</form>
 	</div>
 
-	<input type="hidden" id="page-project-id" value={ fmt.Sprintf("%d", projectID) } />
+	<input type="hidden" id="page-project-id" value={ fmt.Sprintf("%d", projectID) }/>
+	<input type="hidden" id="template_kind_input" value={ templateKind }/>
+	<div id="sprint-tasks-json" hidden>
+		@templ.Raw(sprintTasksJSON(tasks))
+	</div>
+	<!-- Hidden task dropdown hooks kept for legacy JS helpers -->
+	<input type="hidden" name="task_id" id="task_id_input" value=""/>
+	<span id="task-selected-text" class="hidden">Tarefa</span>
+	<div id="dropdown-menu-tasks" class="hidden"></div>
+	<input type="hidden" id="task-form-sprint-id" value={ selectedSprintIDValue(selectedSprintID) }/>
 
-	<!-- Sprint Creation Modal -->
 	@components.Modal(
 		"sprint-modal",
 		"Nova Sprint",
@@ -208,28 +350,102 @@ templ Form(projectName string, projectID int, sprints []repository.Sprint, catal
 		"Criar",
 		"/sprints/create",
 		"#sprint-modal-message",
-		SprintHiddenFields(projectID),
-	)
-	<!-- Task Creation Modal -->
-	@components.Modal(
-		"task-modal",
-		"Nova Tarefa",
-		"Nome da Tarefa",
-		"task_name",
-		"task_name",
-		"Digite o nome da tarefa",
-		"Criar",
-		"/tasks/create",
-		"#task-modal-message",
-		TaskHiddenFields(projectID),
+		SprintHiddenFields(projectID, selectedSprintID, templateKind),
+		components.DateRangeFields("sprint_start_date", "sprint_end_date"),
 	)
 }
 
-templ SprintHiddenFields(projectID int) {
+templ SprintHiddenFields(projectID int, selectedSprintID int, templateKind string) {
 	<input type="hidden" name="project_id" value={ fmt.Sprintf("%d", projectID) }/>
+	<input type="hidden" name="return_to" value={ osNewReturnTo(projectID, selectedSprintID, templateKind) }/>
 }
 
-templ TaskHiddenFields(projectID int) {
-	<input type="hidden" name="project_id" value={ fmt.Sprintf("%d", projectID) }/>
-	<input type="hidden" name="sprint_id" id="task-form-sprint-id" value=""/>
+func selectedSprintIDValue(id int) string {
+	if id <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", id)
+}
+
+func osNewReturnTo(projectID int, sprintID int, templateKind string) string {
+	url := fmt.Sprintf("/os/new?project_id=%d", projectID)
+	if sprintID > 0 {
+		url += fmt.Sprintf("&sprint_id=%d", sprintID)
+	}
+	if templateKind != "" {
+		url += "&template_kind=" + templateKind
+	}
+	return url
+}
+
+func osBackURL(projectID int, sprintID int) string {
+	if sprintID > 0 {
+		return fmt.Sprintf("/sprints?project_id=%d", projectID)
+	}
+	return fmt.Sprintf("/os/new?project_id=%d", projectID)
+}
+
+func osTemplateFieldLabel(kind string) string {
+	if kind == repository.OSTemplateKindEpico {
+		return "Template OS Épico"
+	}
+	if kind == repository.OSTemplateKindOS {
+		return "Template OS"
+	}
+	return "Template de OS"
+}
+
+func showTemplateKind(selectedKind string, kind string) bool {
+	return selectedKind == "" || selectedKind == kind
+}
+
+func defaultOSTemplate(templates []repository.OSTemplate, kind string) *repository.OSTemplate {
+	if len(templates) == 0 {
+		return nil
+	}
+	preferred := "TEMPLATE_OS"
+	if kind == repository.OSTemplateKindEpico {
+		preferred = "TEMPLATE_OS_EPIC"
+	}
+	for i := range templates {
+		if strings.EqualFold(strings.TrimSpace(templates[i].Name), preferred) {
+			return &templates[i]
+		}
+	}
+	if kind == repository.OSTemplateKindOS {
+		for i := range templates {
+			name := strings.ToUpper(strings.TrimSpace(templates[i].Name))
+			if strings.Contains(name, "EPIC") || strings.Contains(name, "ÉPICO") || strings.Contains(name, "EPICO") {
+				continue
+			}
+			if name == "TEMPLATE_OS" || strings.Contains(name, "TEMPLATE_OS") || strings.Contains(name, "TEMPLATE OS") {
+				return &templates[i]
+			}
+		}
+	}
+	return &templates[0]
+}
+
+func defaultOSTemplateID(tmpl *repository.OSTemplate) string {
+	if tmpl == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d", tmpl.ID)
+}
+
+func sprintTasksJSON(tasks []repository.Task) string {
+	type row struct {
+		ID        int    `json:"ID"`
+		Name      string `json:"Name"`
+		SortOrder int    `json:"SortOrder"`
+	}
+	out := make([]row, 0, len(tasks))
+	for _, t := range tasks {
+		out = append(out, row{ID: t.ID, Name: t.Name, SortOrder: t.SortOrder})
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "[]"
+	}
+	return string(b)
 }

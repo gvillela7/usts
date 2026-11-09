@@ -1,0 +1,278 @@
+package os
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/gvillela7/usts/internal/repository"
+)
+
+templ TemplatesList(project repository.Project, templates []repository.OSTemplate) {
+	<div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+		<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+			<div>
+				<p class="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{ project.Name }</p>
+				<h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Templates de OS</h1>
+				<p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
+					Modelos de Template OS e Template OS Épico para pré-preencher uma nova OS. Alterações na OS não afetam o template.
+				</p>
+			</div>
+			<a
+				href={ templ.URL(fmt.Sprintf("/os/templates/new?project_id=%d", project.ID)) }
+				class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white no-underline shadow-sm hover:bg-indigo-700"
+			>
+				Novo template
+			</a>
+		</div>
+
+		if len(templates) == 0 {
+			<div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+				<p class="text-sm font-medium text-slate-700">Nenhum template cadastrado neste projeto.</p>
+				<p class="mt-1 text-sm text-slate-500">Crie um Template OS ou um Template OS Épico com os itens que costumam se repetir.</p>
+				<a href={ templ.URL(fmt.Sprintf("/os/templates/new?project_id=%d", project.ID)) } class="mt-4 inline-flex text-sm font-medium text-indigo-600 no-underline hover:text-indigo-800">Cadastrar template</a>
+			</div>
+		} else {
+			<div class="space-y-8">
+				@templateKindSection(project, "Template OS Épico", templatesOfKind(templates, repository.OSTemplateKindEpico))
+				@templateKindSection(project, "Template OS", templatesOfKind(templates, repository.OSTemplateKindOS))
+			</div>
+		}
+	</div>
+}
+
+templ templateKindSection(project repository.Project, title string, templates []repository.OSTemplate) {
+	<div>
+		<h2 class="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">{ title }</h2>
+		if len(templates) == 0 {
+			<p class="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">Nenhum { title } neste projeto.</p>
+		} else {
+			<div class="grid gap-4 sm:grid-cols-2">
+				for _, tmpl := range templates {
+					<div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+						<div class="flex items-start justify-between gap-3">
+							<div>
+								<h3 class="text-base font-semibold text-slate-900">{ tmpl.Name }</h3>
+								<p class="mt-2 text-xs font-medium text-slate-400">{ templateItemCountLabel(tmpl.ItemCount) }</p>
+							</div>
+							<span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">{ tmpl.KindLabel() }</span>
+						</div>
+						<div class="mt-4 flex gap-2">
+							<a
+								href={ templ.URL(fmt.Sprintf("/os/templates/edit?id=%d&project_id=%d", tmpl.ID, project.ID)) }
+								class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 no-underline hover:bg-slate-50"
+							>
+								Editar
+							</a>
+							<form action="/os/templates/delete" method="POST" onsubmit="return confirm('Excluir este template?')">
+								<input type="hidden" name="id" value={ fmt.Sprintf("%d", tmpl.ID) }/>
+								<input type="hidden" name="project_id" value={ fmt.Sprintf("%d", project.ID) }/>
+								<button type="submit" class="inline-flex items-center rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50">
+									Excluir
+								</button>
+							</form>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ TemplateForm(projectName string, projectID int, catalogs []repository.Catalog, tmpl *repository.OSTemplate, items []repository.OSTemplateItem) {
+	<div class="w-full min-h-screen bg-gray-50 flex flex-col items-center justify-start pt-10 px-4 pb-16">
+		<div class="max-w-[1400px] w-full bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+			<div class="mb-6">
+				<a href={ templ.URL(fmt.Sprintf("/os/templates?project_id=%d", projectID)) } class="text-sm font-medium text-slate-500 no-underline hover:text-slate-800">← Voltar aos templates</a>
+				<p class="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{ projectName }</p>
+				if tmpl != nil {
+					<h1 class="text-xl font-bold text-gray-800">Editar template de OS</h1>
+				} else {
+					<h1 class="text-xl font-bold text-gray-800">Novo template de OS</h1>
+				}
+				<p class="text-sm text-gray-500 mt-1">O template guarda somente os códigos. UST, tipo e descrição são preenchidos na hora de cadastrar a OS.</p>
+			</div>
+
+			<form id="os-template-form" novalidate onsubmit="return submitOSTemplateForm(event)">
+				if tmpl != nil {
+					<input type="hidden" name="template_id" id="template_id_input" value={ fmt.Sprintf("%d", tmpl.ID) }/>
+				}
+				<input type="hidden" id="page-project-id" value={ fmt.Sprintf("%d", projectID) }/>
+
+				<div class="mb-4 max-w-md">
+					<label for="template_kind" class="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+					<select
+						id="template_kind"
+						name="template_kind"
+						required
+						class="w-full border border-gray-300 rounded shadow-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+					>
+						<option value="os" selected?={ templateKindValue(tmpl) == repository.OSTemplateKindOS }>Template OS</option>
+						<option value="epico" selected?={ templateKindValue(tmpl) == repository.OSTemplateKindEpico }>Template OS Épico</option>
+					</select>
+				</div>
+
+				<div class="mb-4">
+					<label for="template_name" class="block text-xs font-medium text-gray-600 mb-1">Nome do template</label>
+					<input
+						id="template_name"
+						name="template_name"
+						type="text"
+						required
+						placeholder="Ex.: Implantação padrão"
+						value={ templateNameValue(tmpl) }
+						class="w-full max-w-md border border-gray-300 rounded shadow-sm px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+					/>
+				</div>
+
+				<div class="mb-4 flex flex-col items-start w-full">
+					<label for="catalog-search" class="block text-xs font-medium text-gray-600 mb-1">Código</label>
+					<div class="relative w-full" id="custom-dropdown-catalog">
+						<input type="hidden" name="catalog_id" id="catalog_id_input"/>
+						<div class="relative">
+							<input
+								id="catalog-search"
+								type="text"
+								autocomplete="off"
+								placeholder="Digite o código ou a descrição"
+								class="w-full !bg-white border border-gray-300 rounded shadow-sm px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[38px]"
+								onfocus="openCatalogDropdown()"
+								oninput="filterCatalogOptions(this.value)"
+								onkeydown="handleCatalogSearchKey(event)"
+							/>
+							<svg class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+							</svg>
+						</div>
+						<div
+							id="dropdown-menu-catalog"
+							style="background-color: white;"
+							class="hidden absolute z-50 mt-1 w-full !bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+						>
+							for _, item := range catalogs {
+								<div
+									class="catalog-option cursor-pointer select-none relative py-3 pl-4 pr-4 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors duration-150"
+									role="option"
+									data-catalog-id={ fmt.Sprintf("%d", item.ID) }
+									data-catalog-cod={ item.Cod }
+									data-catalog-desc={ item.Description }
+								>
+									<div class="flex flex-col">
+										<span class="font-bold text-gray-900 block text-base mb-1">{ item.Cod }</span>
+										<span class="text-gray-600 text-sm block whitespace-normal leading-snug">{ item.Description }</span>
+									</div>
+								</div>
+							}
+							<div id="catalog-empty-message" class="hidden py-3 pl-4 pr-4 text-gray-500 text-sm">Nenhum código encontrado</div>
+						</div>
+					</div>
+					<p class="mt-1 text-xs text-gray-400">Digite para filtrar e clique no código para incluir no template.</p>
+				</div>
+
+				@TemplateItemsTable()
+
+				<div id="message-area" class="mb-4"></div>
+
+				<div class="flex gap-3 mt-6">
+					<a
+						href={ templ.URL(fmt.Sprintf("/os/templates?project_id=%d", projectID)) }
+						class="flex-1 bg-white hover:bg-gray-50 text-gray-600 font-medium py-1.5 px-4 rounded border border-gray-300 text-center text-sm"
+					>
+						Cancelar
+					</a>
+					<button
+						type="submit"
+						class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded text-sm"
+					>
+						if tmpl != nil {
+							Salvar template
+						} else {
+							Criar template
+						}
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="os-template-initial-items" hidden>{ templateItemsJSON(items) }</div>
+}
+
+templ TemplateItemsTable() {
+	<div id="os-items-container" class="mt-8">
+		<div id="os-items-table" class="hidden">
+			<div class="flex justify-between items-center mb-3">
+				<h3 class="text-sm font-semibold text-gray-700">Códigos do template</h3>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="min-w-full bg-white border border-gray-200 rounded-lg">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Código</th>
+							<th class="px-3 py-2 text-left text-xs font-medium text-gray-600 w-24">Ações</th>
+						</tr>
+					</thead>
+					<tbody id="os-template-items-tbody"></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+}
+
+func templateItemCountLabel(count int) string {
+	if count == 1 {
+		return "1 item"
+	}
+	return fmt.Sprintf("%d itens", count)
+}
+
+func templateNameValue(tmpl *repository.OSTemplate) string {
+	if tmpl == nil {
+		return ""
+	}
+	return tmpl.Name
+}
+
+func templateKindValue(tmpl *repository.OSTemplate) string {
+	if tmpl == nil {
+		return repository.OSTemplateKindOS
+	}
+	return repository.NormalizeOSTemplateKind(tmpl.Kind)
+}
+
+func templatesOfKind(templates []repository.OSTemplate, kind string) []repository.OSTemplate {
+	var out []repository.OSTemplate
+	for _, tmpl := range templates {
+		if repository.NormalizeOSTemplateKind(tmpl.Kind) == kind {
+			out = append(out, tmpl)
+		}
+	}
+	return out
+}
+
+func templateItemsJSON(items []repository.OSTemplateItem) string {
+	if items == nil {
+		items = []repository.OSTemplateItem{}
+	}
+	type row struct {
+		CatalogID   int    `json:"CatalogID"`
+		CatalogCod  string `json:"CatalogCod"`
+		CatalogDesc string `json:"CatalogDesc"`
+		UstNormal   int    `json:"UstNormal"`
+		UstNewTech  int    `json:"UstNewTech"`
+	}
+	out := make([]row, 0, len(items))
+	for _, item := range items {
+		out = append(out, row{
+			CatalogID:   item.CatalogID,
+			CatalogCod:  item.CatalogCod,
+			CatalogDesc: item.CatalogDesc,
+			UstNormal:   item.UstNormal,
+			UstNewTech:  item.UstNewTech,
+		})
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "[]"
+	}
+	return string(b)
+}

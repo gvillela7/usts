@@ -9,11 +9,12 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"github.com/gvillela7/usts/internal/repository"
 	"github.com/gvillela7/usts/web/templates/components"
 	"github.com/gvillela7/usts/web/templates/pages"
 )
 
-func Layout(title string, currentPage string, metaTags, bodyContent templ.Component) templ.Component {
+func Layout(title string, currentPage string, project *repository.Project, metaTags, bodyContent templ.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -34,14 +35,14 @@ func Layout(title string, currentPage string, metaTags, bodyContent templ.Compon
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta http-equiv=\"X-UA-Compatible\" content=\"ie=edge\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' ws://localhost:*; img-src 'self' data:;\"><meta name=\"theme-color\" content=\"#FEFEF5\"><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"pt-BR\" class=\"h-full\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta http-equiv=\"X-UA-Compatible\" content=\"ie=edge\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' ws://localhost:*; img-src 'self' data:;\"><meta name=\"theme-color\" content=\"#4f46e5\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/main.templ`, Line: 17, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/main.templ`, Line: 18, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -55,7 +56,7 @@ func Layout(title string, currentPage string, metaTags, bodyContent templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<link rel=\"dns-prefetch\" href=\"//fonts.googleapis.com\"><link rel=\"dns-prefetch\" href=\"//fonts.gstatic.com\"><link rel=\"preconnect\" href=\"//fonts.googleapis.com\" crossorigin><link rel=\"preconnect\" href=\"//fonts.gstatic.com\" crossorigin><link rel=\"manifest\" href=\"/static/manifest.webmanifest\"><link rel=\"apple-touch-icon\" href=\"/static/apple-touch-icon.png\"><link rel=\"shortcut icon\" href=\"/static/favicon.ico\" type=\"image/x-icon\"><link rel=\"icon\" href=\"/static/favicon.svg\" type=\"image/svg+xml\"><link rel=\"icon\" href=\"/static/favicon.png\" sizes=\"any\"><link href=\"https://fonts.googleapis.com/css2?family=Inter&display=swap\" rel=\"stylesheet\"><link href=\"/static/styles.css\" rel=\"stylesheet\"><style>\n\t\t\t\t/* Fix for daisyUI modal */\n\t\t\t\t.modal:is([open]) {\n\t\t\t\t\tpointer-events: auto !important;\n\t\t\t\t\tvisibility: visible !important;\n\t\t\t\t\topacity: 1 !important;\n\t\t\t\t\tbackground-color: transparent !important;\n\t\t\t\t}\n\n\t\t\t\t.modal-box {\n\t\t\t\t\tmax-width: 28rem !important;\n\t\t\t\t\twidth: auto !important;\n\t\t\t\t\tmin-width: 20rem !important;\n\t\t\t\t\tmax-height: 80vh !important;\n\t\t\t\t\tpadding: 1.5rem !important;\n\t\t\t\t\tborder-radius: 0.75rem !important;\n\t\t\t\t\tbackground-color: white !important;\n\t\t\t\t\tbox-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;\n\t\t\t\t\toverflow-y: auto !important;\n\t\t\t\t\tposition: relative !important;\n\t\t\t\t\ttransform: scale(1) !important;\n\t\t\t\t\tmargin: auto !important;\n\t\t\t\t\tz-index: 1000 !important;\n\t\t\t\t}\n\n\t\t\t\t.modal-backdrop {\n\t\t\t\t\tz-index: -1 !important;\n\t\t\t\t\tgrid-column-start: 1 !important;\n\t\t\t\t\tgrid-row-start: 1 !important;\n\t\t\t\t\theight: 100vh !important;\n\t\t\t\t\twidth: 100vw !important;\n\t\t\t\t\tcursor: pointer !important;\n\t\t\t\t\tbackground-color: rgba(0, 0, 0, 0.15) !important;\n\t\t\t\t\tdisplay: block !important;\n\t\t\t\t}\n\n\t\t\t\t.modal-box input[type=\"text\"],\n\t\t\t\t.modal-box input {\n\t\t\t\t\tcolor: #000 !important;\n\t\t\t\t\tbackground-color: #f5f5f5 !important;\n\t\t\t\t\tborder: 1px solid #d1d5db !important;\n\t\t\t\t}\n\n\t\t\t\t.modal-backdrop button {\n\t\t\t\t\tdisplay: none !important;\n\t\t\t\t}\n\t\t\t</style></head>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<link rel=\"dns-prefetch\" href=\"//fonts.googleapis.com\"><link rel=\"dns-prefetch\" href=\"//fonts.gstatic.com\"><link rel=\"preconnect\" href=\"//fonts.googleapis.com\" crossorigin><link rel=\"preconnect\" href=\"//fonts.gstatic.com\" crossorigin><link rel=\"manifest\" href=\"/static/manifest.webmanifest\"><link rel=\"apple-touch-icon\" href=\"/static/apple-touch-icon.png\"><link rel=\"shortcut icon\" href=\"/static/favicon.ico\" type=\"image/x-icon\"><link rel=\"icon\" href=\"/static/favicon.svg\" type=\"image/svg+xml\"><link rel=\"icon\" href=\"/static/favicon.png\" sizes=\"any\"><link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\"><link href=\"/static/styles.css?v=oslayout4\" rel=\"stylesheet\"><style>\n\t\t\t\t.modal:is([open]) {\n\t\t\t\t\tpointer-events: auto;\n\t\t\t\t\tvisibility: visible;\n\t\t\t\t\topacity: 1;\n\t\t\t\t}\n\t\t\t\t.modal-box {\n\t\t\t\t\tmax-width: 28rem;\n\t\t\t\t\twidth: calc(100% - 2rem);\n\t\t\t\t\tmargin: auto;\n\t\t\t\t\ttransform: none;\n\t\t\t\t}\n\t\t\t\t.modal-backdrop {\n\t\t\t\t\tbackground-color: rgb(15 23 42 / 0.4);\n\t\t\t\t}\n\t\t\t</style></head>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -63,7 +64,7 @@ func Layout(title string, currentPage string, metaTags, bodyContent templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<body onload=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<body class=\"min-h-full bg-slate-50 text-slate-800 antialiased\" onload=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -76,7 +77,11 @@ func Layout(title string, currentPage string, metaTags, bodyContent templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = components.Navbar(currentPage).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Navbar(currentPage, project).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"lg:pl-60\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -84,7 +89,7 @@ func Layout(title string, currentPage string, metaTags, bodyContent templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<script src=\"/static/scripts.js\"></script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><script src=\"/static/scripts.js?v=oslayout11\"></script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,0 +1,58 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/gvillela7/usts/internal/repository"
+)
+
+// ProjectsListContent renders the list of all projects.
+templ ProjectsListContent(projects []repository.Project, current *repository.Project) {
+	<div class="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
+		<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+			<div>
+				<h1 class="text-2xl font-semibold tracking-tight text-slate-900">Projetos</h1>
+				<p class="mt-1 text-sm text-slate-500">Todos os projetos cadastrados.</p>
+			</div>
+			<button
+				type="button"
+				onclick="document.getElementById('create-project-modal').showModal()"
+				class="inline-flex h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+			>
+				Criar projeto
+			</button>
+		</div>
+		<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+			if len(projects) == 0 {
+				<p class="px-6 py-10 text-center text-sm text-slate-500">Nenhum projeto cadastrado ainda.</p>
+			} else {
+				<table class="w-full text-left text-sm">
+					<thead class="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+						<tr>
+							<th class="px-6 py-3">Nome</th>
+							<th class="px-6 py-3 text-right">Ações</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, p := range projects {
+							<tr class="hover:bg-slate-50">
+								<td class="px-6 py-3 font-medium text-slate-800">
+									{ p.Name }
+									if current != nil && current.ID == p.ID {
+										<span class="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">atual</span>
+									}
+								</td>
+								<td class="px-6 py-3 text-right">
+									<a
+										href={ templ.URL(fmt.Sprintf("/sprints?project_id=%d", p.ID)) }
+										class="text-sm font-medium text-indigo-600 no-underline hover:text-indigo-800"
+									>Abrir</a>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+		</div>
+	</div>
+}

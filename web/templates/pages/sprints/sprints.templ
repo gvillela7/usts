@@ -1,9 +1,12 @@
 package sprints
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
 	"github.com/gvillela7/usts/internal/repository"
 	"github.com/gvillela7/usts/web/templates/components"
-	"fmt"
 )
 
 templ MetaTagsSprints(keywords, description string) {
@@ -11,123 +14,246 @@ templ MetaTagsSprints(keywords, description string) {
 	<meta name="description" content={ description }/>
 }
 
-templ SprintsBodyContentWithTasks(projectsWithSprints []ProjectWithSprints) {
-	<div class="container mx-auto p-6">
-		<h1 class="text-3xl font-bold mb-6">Sprints</h1>
-		if len(projectsWithSprints) == 0 {
-			<div class="alert alert-info">
-				<span>Nenhuma sprint encontrada. Crie sprints a partir da página de projetos.</span>
+templ SprintsBodyContentWithTasks(project repository.Project, sprints []SprintWithTasks) {
+	<div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+		<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+			<div>
+				<p class="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{ project.Name }</p>
+				<h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Sprints</h1>
+				<p class="mt-2 text-sm text-slate-500">Sprints e tarefas deste projeto.</p>
+			</div>
+			<button
+				type="button"
+				onclick="document.getElementById('create-sprint-modal').showModal()"
+				class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+			>
+				<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+					<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+				</svg>
+				Nova sprint
+			</button>
+		</div>
+
+		if len(sprints) == 0 {
+			<div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+				<p class="text-sm font-medium text-slate-700">Nenhuma sprint neste projeto.</p>
+				<p class="mt-1 text-sm text-slate-500">Crie uma sprint para organizar as tarefas e ordens de serviço.</p>
+				<button
+					type="button"
+					onclick="document.getElementById('create-sprint-modal').showModal()"
+					class="mt-4 inline-flex text-sm font-medium text-indigo-600 hover:text-indigo-800"
+				>
+					Cadastrar sprint
+				</button>
 			</div>
 		} else {
-			<div class="space-y-6">
-				for _, projectData := range projectsWithSprints {
-					@projectSprintsSectionWithCollapse(projectData)
-				}
+			<div>
+				<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+					@sprintStat("Sprints", fmt.Sprintf("%d", len(sprints)))
+					@sprintStat("Em andamento", fmt.Sprintf("%d", sprintsInProgressCount(sprints)))
+					@sprintStat("Tarefas", fmt.Sprintf("%d", sprintsTotalTasks(sprints)))
+					@sprintStat("UST Final total", fmt.Sprintf("%d", sprintsTotalUSTFinal(sprints)))
+				</div>
+				<div class="mb-4">
+					<h2 class="text-base font-semibold text-slate-900">Suas sprints</h2>
+					<p class="mt-0.5 text-sm text-slate-500">Gerencie as sprints do projeto, visualize tarefas e períodos.</p>
+				</div>
+				<div class="space-y-3">
+					for _, sprintWithTasks := range sprints {
+						@sprintCollapseItem(project, sprintWithTasks)
+					}
+				</div>
 			</div>
 		}
-		<!-- Edit Sprint Modal -->
+
+		@CreateSprintModal(project.ID)
 		@EditSprintModal()
-		<!-- Edit Project Modal -->
 		@EditProjectModal()
+		@CadastrarOSModal(project.ID)
+		@EditTaskModal()
+		<input type="hidden" id="page-project-id" value={ fmt.Sprintf("%d", project.ID) }/>
+		<input type="hidden" id="page-project-name" value={ project.Name }/>
 	</div>
 }
 
-templ projectSprintsSectionWithCollapse(projectData ProjectWithSprints) {
-	<div class="mb-4">
-		<!-- Project Header -->
-		<div class="flex items-center justify-between mb-3">
-			<div class="flex items-center gap-2">
-				<h2 class="text-xl font-medium">{ projectData.Project.Name }</h2>
-				<span class="badge badge-primary">{ fmt.Sprintf("%d sprints", len(projectData.Sprints)) }</span>
-				<svg
-					class="w-4 h-4 text-gray-600 hover:text-blue-600 cursor-pointer inline-block"
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 20 20"
-					fill="currentColor"
-					onclick={ editProjectHandler(projectData.Project.ID, projectData.Project.Name) }
-					title="Editar projeto"
-				>
-					<path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"></path>
+templ sprintStat(label, value string) {
+	<div class="rounded-xl border border-slate-200 bg-white px-4 py-3.5">
+		<p class="text-xs font-medium text-slate-500">{ label }</p>
+		<p class="mt-1 text-xl font-bold tabular-nums text-indigo-700">{ value }</p>
+	</div>
+}
+
+templ sprintCollapseItem(project repository.Project, sprintData SprintWithTasks) {
+	<details class="group rounded-xl border border-slate-200 bg-white transition-shadow hover:shadow-sm open:border-indigo-200 open:shadow-sm">
+		<summary class="flex cursor-pointer list-none items-center gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+			<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+				<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
 				</svg>
-			</div>
-		</div>
-		<!-- Sprint Collapses -->
-		<div class="join join-vertical w-full">
-			for _, sprintWithTasks := range projectData.Sprints {
-				@sprintCollapseItem(sprintWithTasks)
-			}
-		</div>
-	</div>
-}
-
-templ sprintCollapseItem(sprintData SprintWithTasks) {
-	<div class="collapse collapse-arrow join-item border border-gray-200 bg-white">
-		<input type="checkbox" name={ fmt.Sprintf("sprint-collapse-%d", sprintData.Sprint.ID) }/>
-		<!-- Collapse Title (Sprint Name + Info) -->
-		<div class="collapse-title text-md font-semibold bg-white">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<span class="badge badge-sm">ID: { fmt.Sprintf("%d", sprintData.Sprint.ID) }</span>
-					<span>{ sprintData.Sprint.Name }</span>
-					<span class="badge badge-info badge-sm">{ fmt.Sprintf("%d tarefas", len(sprintData.Tasks)) }</span>
+			</span>
+			<div class="min-w-0 flex-1">
+				<div class="flex min-w-0 flex-wrap items-center gap-2">
+					<p class="truncate text-base font-semibold text-slate-900">{ sprintData.Sprint.ListTitle() }</p>
+					if sprintData.Sprint.Status() == "Em andamento" {
+						<span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">Em andamento</span>
+					} else if sprintData.Sprint.Status() == "Planejada" {
+						<span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">Planejada</span>
+					} else if sprintData.Sprint.Status() == "Encerrada" {
+						<span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">Encerrada</span>
+					}
 				</div>
-				<div class="flex items-center gap-2">
-					<span class="text-xs text-gray-500">{ sprintData.Sprint.CreatedAt.Format("02/01/2006") }</span>
-					<svg
-						class="w-4 h-4 text-gray-600 hover:text-blue-600 cursor-pointer"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 20 20"
-						fill="currentColor"
-						onclick={ editSprint(sprintData.Sprint.ID, sprintData.Sprint.Name) }
-						title="Editar sprint"
-					>
+				<p class="mt-0.5 text-xs text-slate-400">
+					{ sprintTaskCountLabel(len(sprintData.Tasks)) }
+					<span class="text-slate-300"> · </span>
+					<span class="font-medium text-indigo-700 tabular-nums">UST Final total: { fmt.Sprintf("%d", sprintData.USTFinalTotal) }</span>
+				</p>
+			</div>
+			<div class="flex shrink-0 items-center gap-2">
+				<button
+					type="button"
+					class="inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+					onclick={ openCadastrarOS(sprintData.Sprint.ID) }
+					title="Cadastrar OS"
+				>
+					Cadastrar OS
+				</button>
+				<button
+					type="button"
+					class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+					onclick={ exportSprintExcel(sprintData.Sprint.ID) }
+					title="Exportar sprint em Excel"
+					aria-label="Exportar sprint em Excel"
+				>
+					<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+						<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h5.586A2 2 0 0113 2.586L15.414 5A2 2 0 0116 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm7 1V3.5L14.5 7H12a1 1 0 01-1-1V5zM6 10a1 1 0 011-1h1a1 1 0 110 2H7a1 1 0 01-1-1zm4 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zm-4 3a1 1 0 011-1h1a1 1 0 110 2H7a1 1 0 01-1-1zm4 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+					</svg>
+				</button>
+				<button
+					type="button"
+					class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-indigo-600"
+					onclick={ editSprint(sprintData.Sprint.ID, sprintData.Sprint.Name, sprintData.Sprint.StartDateInput(), sprintData.Sprint.EndDateInput()) }
+					title="Editar sprint"
+				>
+					<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 						<path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"></path>
 					</svg>
-				</div>
+				</button>
+				<svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 9l-7 7-7-7"></path>
+				</svg>
 			</div>
-		</div>
-		<!-- Collapse Content (Tasks List) -->
-		<div class="collapse-content bg-white">
+		</summary>
+		<div class="border-t border-slate-100 px-5 py-4">
 			if len(sprintData.Tasks) == 0 {
-				<div class="text-sm text-gray-500 italic py-2">
-					Nenhuma tarefa nesta sprint
-				</div>
+				<p class="text-sm text-slate-500">Nenhuma tarefa nesta sprint.</p>
 			} else {
-				<div class="overflow-x-auto">
-					<table class="min-w-full bg-white border border-gray-200 rounded-lg">
-						<thead class="bg-gray-50">
-							<tr>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">ID</th>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Nome da Tarefa</th>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Data de Criação</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, task := range sprintData.Tasks {
-								<tr class="border-t border-gray-200">
-									<td class="px-3 py-2 text-sm text-gray-900">{ fmt.Sprintf("%d", task.ID) }</td>
-									<td class="px-3 py-2 text-sm text-gray-900">
-										<a
-											href={ templ.URL(fmt.Sprintf("/sprints/detail?id=%d", task.ID)) }
-											class="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-										>
-											{ task.Name }
-										</a>
-									</td>
-									<td class="px-3 py-2 text-sm text-gray-600">{ task.CreatedAt.Format("02/01/2006 15:04") }</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
+				<ul id={ fmt.Sprintf("sprint-tasks-%d", sprintData.Sprint.ID) } class="divide-y divide-slate-100" data-sprint-id={ fmt.Sprintf("%d", sprintData.Sprint.ID) }>
+					for _, taskMeta := range sprintData.Tasks {
+						<li
+							class="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+							data-task-id={ fmt.Sprintf("%d", taskMeta.Task.ID) }
+							draggable="false"
+						>
+							<div class="flex min-w-0 items-start gap-2">
+								<span
+									class="task-drag-handle mt-0.5 inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 active:cursor-grabbing"
+									draggable="true"
+									title="Arrastar para reordenar"
+									aria-label="Arrastar para reordenar"
+									role="button"
+									tabindex="0"
+									onmousedown="event.stopPropagation();"
+									onclick="event.preventDefault(); event.stopPropagation();"
+								>
+									<svg class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+										<path d="M7 5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM7 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM7 15a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 15a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"/>
+									</svg>
+								</span>
+								<div class="min-w-0">
+									<a
+										href={ templ.URL(fmt.Sprintf("/sprints/detail?id=%d", taskMeta.Task.ID)) }
+										class="truncate text-sm font-medium text-indigo-600 no-underline hover:text-indigo-800"
+									>
+										{ taskMeta.Task.Name }
+									</a>
+									<p class="mt-0.5 text-xs text-slate-400">Inserida em { taskMeta.Task.CreatedAtLabel() }</p>
+								</div>
+							</div>
+							<div class="flex shrink-0 items-center gap-1.5 pl-10 sm:pl-0">
+								if strings.TrimSpace(taskMeta.Task.Responsavel) != "" {
+									<span
+										class={ "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold", responsavelAvatarClass(taskMeta.Task.Responsavel) }
+										title={ taskMeta.Task.Responsavel }
+									>
+										{ responsavelInitials(taskMeta.Task.Responsavel) }
+									</span>
+									<span class={ "inline-flex h-8 max-w-[11rem] items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium", responsavelPillClass(taskMeta.Task.Responsavel) }>
+										<svg class="h-3.5 w-3.5 shrink-0 opacity-70" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+											<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+										</svg>
+										<span class="truncate">{ taskMeta.Task.Responsavel }</span>
+									</span>
+								} else {
+									<span class="inline-flex h-8 items-center rounded-full border border-dashed border-slate-200 px-2.5 text-xs text-slate-400" title="Responsável não informado">
+										Sem responsável
+									</span>
+								}
+								<span class="inline-flex h-8 items-center rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 text-xs font-semibold tabular-nums text-indigo-800" title="Soma da UST Final dos códigos">
+									UST Final: { fmt.Sprintf("%d", taskMeta.USTFinalTotal) }
+								</span>
+								<div class="inline-flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5">
+									<a
+										href={ templ.URL(fmt.Sprintf("/sprints/detail?id=%d", taskMeta.Task.ID)) }
+										class="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 no-underline hover:bg-slate-100 hover:text-indigo-600"
+										title="Visualizar"
+										aria-label="Visualizar"
+									>
+										<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+											<path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+											<path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+										</svg>
+									</a>
+									<a
+										href={ templ.URL(fmt.Sprintf("/sprints/detail?id=%d&edit=1", taskMeta.Task.ID)) }
+										class="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 no-underline hover:bg-slate-100 hover:text-indigo-600"
+										title="Editar códigos"
+										aria-label="Editar códigos"
+									>
+										<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+											<path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"></path>
+										</svg>
+									</a>
+									<button
+										type="button"
+										class="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-indigo-600"
+										onclick={ exportTaskExcel(taskMeta.Task.ID, taskMeta.Task.Name, project.Name, taskMeta.Task.CreatedAtInput()) }
+										title="Gerar Excel"
+										aria-label="Gerar Excel"
+									>
+										<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+											<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h5.586A2 2 0 0113 2.586L15.414 5A2 2 0 0116 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm7 1V3.5L14.5 7H12a1 1 0 01-1-1V5zM6 10a1 1 0 011-1h1a1 1 0 110 2H7a1 1 0 01-1-1zm4 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zm-4 3a1 1 0 011-1h1a1 1 0 110 2H7a1 1 0 01-1-1zm4 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+										</svg>
+									</button>
+								</div>
+							</div>
+						</li>
+					}
+				</ul>
 			}
 		</div>
-	</div>
+	</details>
 }
 
-script editSprint(sprintID int, sprintName string) {
+script editSprint(sprintID int, sprintName string, startDate string, endDate string) {
+	event.preventDefault();
+	event.stopPropagation();
 	document.getElementById('edit-sprint-id').value = sprintID;
 	document.getElementById('edit-sprint-name').value = sprintName;
+	document.getElementById('edit-sprint-start').value = startDate;
+	document.getElementById('edit-sprint-end').value = endDate;
+	if (typeof window.syncSprintEndMin === 'function') {
+		window.syncSprintEndMin(document.getElementById('edit-sprint-start'));
+	}
 	document.getElementById('edit-sprint-modal').showModal();
 }
 
@@ -135,6 +261,111 @@ script editProjectHandler(projectID int, projectName string) {
 	document.getElementById('edit-project-id').value = projectID;
 	document.getElementById('edit-project-name').value = projectName;
 	document.getElementById('edit-project-modal').showModal();
+}
+
+script openCadastrarOS(sprintID int) {
+	event.preventDefault();
+	event.stopPropagation();
+	document.getElementById('cadastrar-os-sprint-id').value = sprintID;
+	document.getElementById('cadastrar-os-kind-os').checked = true;
+	document.getElementById('cadastrar-os-modal').showModal();
+}
+
+script editTask(taskID int, taskName string) {
+	event.preventDefault();
+	event.stopPropagation();
+	document.getElementById('edit-task-id').value = taskID;
+	document.getElementById('edit-task-name').value = taskName;
+	document.getElementById('edit-task-modal').showModal();
+}
+
+script exportTaskExcel(taskID int, taskName string, projectName string, deliveryDate string) {
+	event.preventDefault();
+	event.stopPropagation();
+	if (typeof window.exportTaskByID === 'function') {
+		window.exportTaskByID(taskID, taskName, projectName, deliveryDate);
+		return;
+	}
+	window.location.href = '/sprints/detail?id=' + taskID;
+}
+
+script exportSprintExcel(sprintID int) {
+	event.preventDefault();
+	event.stopPropagation();
+	if (typeof window.exportSprintSummaryByID === 'function') {
+		window.exportSprintSummaryByID(sprintID);
+		return;
+	}
+	alert('Função de exportação não disponível. Recarregue a página.');
+}
+
+templ CadastrarOSModal(projectID int) {
+	<dialog id="cadastrar-os-modal" class="modal">
+		<div class="modal-box !max-w-md !w-[calc(100%-2rem)] !rounded-2xl !bg-white !p-0 !shadow-xl">
+			<div class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
+				<h3 class="text-lg font-semibold tracking-tight text-slate-900">Cadastrar OS</h3>
+				<form method="dialog">
+					<button type="submit" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Fechar">✕</button>
+				</form>
+			</div>
+			<div class="px-6 py-5">
+				<input type="hidden" id="cadastrar-os-sprint-id"/>
+				<p class="mb-3 text-sm text-slate-600">Selecione o tipo de template para esta OS.</p>
+				<div class="space-y-2">
+					<label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 hover:border-indigo-200 hover:bg-indigo-50/40">
+						<input type="radio" name="cadastrar_os_kind" id="cadastrar-os-kind-os" value="os" class="mt-1" checked/>
+						<span>
+							<span class="block text-sm font-semibold text-slate-900">Template OS</span>
+							<span class="block text-xs text-slate-500">Modelo padrão de ordem de serviço.</span>
+						</span>
+					</label>
+					<label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 hover:border-indigo-200 hover:bg-indigo-50/40">
+						<input type="radio" name="cadastrar_os_kind" id="cadastrar-os-kind-epico" value="epico" class="mt-1"/>
+						<span>
+							<span class="block text-sm font-semibold text-slate-900">Template OS Épico</span>
+							<span class="block text-xs text-slate-500">Modelo para OS de épico.</span>
+						</span>
+					</label>
+				</div>
+				<div class="mt-6 flex justify-end gap-2">
+					<button type="button" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50" onclick="document.getElementById('cadastrar-os-modal').close()">Cancelar</button>
+					<button type="button" class="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" onclick={ continueCadastrarOS(projectID) }>Continuar</button>
+				</div>
+			</div>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+}
+
+script continueCadastrarOS(projectID int) {
+	const sprintId = document.getElementById('cadastrar-os-sprint-id').value;
+	const kindInput = document.querySelector('input[name="cadastrar_os_kind"]:checked');
+	const kind = kindInput ? kindInput.value : 'os';
+	if (!sprintId) return;
+	window.location.href = '/os/new?project_id=' + projectID + '&sprint_id=' + sprintId + '&template_kind=' + kind;
+}
+
+templ CreateSprintHiddenFields(projectID int) {
+	<input type="hidden" name="project_id" value={ fmt.Sprintf("%d", projectID) }/>
+	<input type="hidden" name="return_to" value="/sprints"/>
+}
+
+templ CreateSprintModal(projectID int) {
+	@components.Modal(
+		"create-sprint-modal",
+		"Nova Sprint",
+		"Nome da Sprint",
+		"sprint_name",
+		"create_sprint_name",
+		"Digite o nome da sprint",
+		"Criar",
+		"/sprints/create",
+		"#create-sprint-message",
+		CreateSprintHiddenFields(projectID),
+		components.DateRangeFields("create_sprint_start", "create_sprint_end"),
+	)
 }
 
 templ EditSprintHiddenFields() {
@@ -153,6 +384,7 @@ templ EditSprintModal() {
 		"/sprints/update",
 		"#edit-sprint-message",
 		EditSprintHiddenFields(),
+		components.DateRangeFields("edit-sprint-start", "edit-sprint-end"),
 	)
 }
 
@@ -172,6 +404,28 @@ templ EditProjectModal() {
 		"/projects/update",
 		"#edit-project-message",
 		EditProjectHiddenFields(),
+		nil,
+	)
+}
+
+templ EditTaskHiddenFields() {
+	<input type="hidden" id="edit-task-id" name="task_id"/>
+	<input type="hidden" name="return_to" value="/sprints"/>
+}
+
+templ EditTaskModal() {
+	@components.Modal(
+		"edit-task-modal",
+		"Editar Tarefa",
+		"Nome da Tarefa",
+		"task_name",
+		"edit-task-name",
+		"Digite o nome da tarefa",
+		"Salvar",
+		"/tasks/update",
+		"#edit-task-message",
+		EditTaskHiddenFields(),
+		nil,
 	)
 }
 
@@ -185,135 +439,633 @@ templ MetaTagsTaskDetail(keywords, description string) {
 	<meta name="description" content={ description }/>
 }
 
-templ TaskDetailBodyContent(task *repository.Task, project *repository.Project, osList []repository.OSWithCatalog) {
-	<div class="container mx-auto p-6">
-		<!-- Header with back button -->
-		<div class="mb-6">
-			<div class="flex justify-between items-start">
-				<div class="flex-1">
-					<a href="/sprints" class="btn btn-sm btn-ghost mb-4">
-						<svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+templ TaskDetailBodyContent(task *repository.Task, project *repository.Project, osList []repository.OSWithCatalog, catalogs []repository.Catalog, editMode bool) {
+	<div class="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
+		<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+			<div>
+				<a href={ templ.URL(fmt.Sprintf("/sprints?project_id=%d", project.ID)) } class="mb-3 inline-flex items-center text-sm font-medium text-slate-500 no-underline hover:text-slate-800">
+					← Voltar para Sprints
+				</a>
+				<div class="flex items-center gap-2">
+					<h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{ task.Name }</h1>
+					<button
+						type="button"
+						onclick={ copyTaskName(task.Name) }
+						class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+						title="Copiar código"
+					>
+						<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+							<path d="M7 3.5A1.5 1.5 0 004.5 5v10A1.5 1.5 0 006 16.5h8a1.5 1.5 0 001.5-1.5v-1.5h-1.5A3 3 0 0011 10.5V3H7z"></path>
+							<path d="M9 2.5A1.5 1.5 0 0110.5 1H15a1.5 1.5 0 011.5 1.5V11a1.5 1.5 0 01-1.5 1.5H11V10a3 3 0 00-3-3H9V2.5z"></path>
 						</svg>
-						Voltar para Sprints
-					</a>
-					<h1 class="text-3xl font-bold">{ task.Name }</h1>
-					<p class="text-gray-600 mt-2">Projeto: <span class="font-semibold">{ project.Name }</span></p>
-					<p class="text-gray-500 text-sm">Criada em: { task.CreatedAt.Format("02/01/2006 15:04") }</p>
+					</button>
 				</div>
-				if len(osList) > 0 {
-					<div class="flex-shrink-0">
-						<button
-							onclick={ exportToExcel(task.ID, task.Name, project.Name, task.CreatedAt.Format("2006-01-02")) }
-							class="btn btn-primary btn-sm gap-2"
-							title="Exportar para Excel"
-						>
-							<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-							</svg>
-							Exportar Excel
-						</button>
-					</div>
+				<p class="mt-1 text-sm text-slate-600">Projeto: <span class="font-semibold">{ project.Name }</span></p>
+				if strings.TrimSpace(task.Responsavel) != "" {
+					<p class="mt-0.5 text-sm text-slate-600">Responsável: <span class="font-semibold">{ task.Responsavel }</span></p>
+				}
+				<p class="text-xs text-slate-400">Criada em: { task.CreatedAt.Format("02/01/2006 15:04") }</p>
+			</div>
+			<div class="flex flex-wrap gap-2">
+				if !editMode {
+					<a
+						href={ templ.URL(fmt.Sprintf("/sprints/detail?id=%d&edit=1", task.ID)) }
+						class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50"
+					>
+						Editar códigos
+					</a>
+				} else {
+					<a
+						href={ templ.URL(fmt.Sprintf("/sprints/detail?id=%d", task.ID)) }
+						class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50"
+					>
+						Cancelar
+					</a>
+				}
+				if len(osList) > 0 || editMode {
+					<button
+						type="button"
+						onclick={ exportTaskExcel(task.ID, task.Name, project.Name, task.CreatedAt.Format("2006-01-02")) }
+						class="inline-flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700"
+						title="Exportar para Excel"
+					>
+						Exportar Excel
+					</button>
 				}
 			</div>
 		</div>
 
-		<!-- OS List -->
-		if len(osList) == 0 {
-			<div class="alert alert-info">
-				<span>Nenhuma OS encontrada para esta tarefa.</span>
+		if editMode {
+			@taskOSEditForm(task, project, osList, catalogs)
+		} else if len(osList) == 0 {
+			<div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
+				Nenhuma OS encontrada para esta tarefa.
+				<a href={ templ.URL(fmt.Sprintf("/sprints/detail?id=%d&edit=1", task.ID)) } class="mt-2 inline-block font-medium text-indigo-600 no-underline hover:text-indigo-800">Editar códigos</a>
 			</div>
 		} else {
-			<div class="mb-4">
-				<h2 class="text-xl font-semibold mb-3">Ordens de Serviço ({ fmt.Sprintf("%d", len(osList)) })</h2>
-				<div class="overflow-x-auto">
-					<table id="sprint-os-table" class="min-w-full bg-white border border-gray-200 rounded-lg">
-						<thead class="bg-gray-50">
-							<tr>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">ID</th>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Código Catálogo</th>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Descrição Catálogo</th>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Descrição OS</th>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Tipo</th>
-								<th class="px-3 py-2 text-center text-xs font-medium text-gray-600">UST Item</th>
-								<th class="px-3 py-2 text-center text-xs font-medium text-gray-600">UST Recorrência</th>
-								<th class="px-3 py-2 text-center text-xs font-medium text-gray-600">Complexidade</th>
-								<th class="px-3 py-2 text-center text-xs font-medium text-gray-600">UST Final</th>
-								<th class="px-3 py-2 text-center text-xs font-medium text-gray-600">Tarefa Candidata</th>
-								<th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Data de Criação</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, osItem := range osList {
-								<tr class="border-t border-gray-200 hover:bg-gray-50">
-									<td class="px-3 py-2 text-sm text-gray-900">{ fmt.Sprintf("%d", osItem.OS.ID) }</td>
-									<td class="px-3 py-2 text-sm font-medium text-blue-600">{ osItem.CatalogCod }</td>
-									<td class="px-3 py-2 text-sm text-gray-700">{ osItem.CatalogDescription }</td>
-									<td class="px-3 py-2 text-sm text-gray-900">{ osItem.OS.Description }</td>
-									<td class="px-3 py-2 text-sm">
-										<span class={ "badge", getBadgeClass(osItem.OS.Kind) }>{ osItem.OS.Kind }</span>
-									</td>
-									<td class="px-3 py-2 text-sm text-center text-gray-900">{ fmt.Sprintf("%d", osItem.OS.USTItem) }</td>
-									<td class="px-3 py-2 text-sm text-center text-gray-900">{ fmt.Sprintf("%d", osItem.OS.USTRecurrence) }</td>
-									<td class="px-3 py-2 text-sm text-center">
-										<span class={ "badge", getComplexityBadgeClass(osItem.OS.Complexity) }>{ fmt.Sprintf("%d", osItem.OS.Complexity) }</span>
-									</td>
-									<td class="px-3 py-2 text-sm text-center font-semibold text-gray-900">
-										if osItem.OS.USTEnd != nil {
-											{ fmt.Sprintf("%d", *osItem.OS.USTEnd) }
-										} else {
-											-
-										}
-									</td>
-									<td class="px-3 py-2 text-sm text-center">
-										if osItem.OS.TarefaCandidta == 1 {
-											<span class="badge badge-success">Sim</span>
-										} else {
-											<span class="badge badge-ghost">Não</span>
-										}
-									</td>
-									<td class="px-3 py-2 text-sm text-gray-600">{ osItem.OS.CreatedAt.Format("02/01/2006 15:04") }</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-
-				<!-- Summary Section -->
-				<div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
-					<h3 class="text-lg font-semibold mb-2">Resumo</h3>
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<div>
-							<p class="text-sm text-gray-600">Total de OS</p>
-							<p class="text-2xl font-bold text-blue-600">{ fmt.Sprintf("%d", len(osList)) }</p>
-						</div>
-						<div>
-							<p class="text-sm text-gray-600">UST Total</p>
-							<p class="text-2xl font-bold text-blue-600">{ fmt.Sprintf("%d", calculateTotalUST(osList)) }</p>
-						</div>
-						<div>
-							<p class="text-sm text-gray-600">Tarefas Candidatas</p>
-							<p class="text-2xl font-bold text-blue-600">{ fmt.Sprintf("%d", countTarefasCandidatas(osList)) }</p>
-						</div>
-					</div>
-				</div>
-			</div>
+			@taskOSViewTable(osList, catalogs)
 		}
 	</div>
 }
 
+templ taskOSViewTable(osList []repository.OSWithCatalog, catalogs []repository.Catalog) {
+	<div class="mb-4">
+		<h2 class="mb-3 text-lg font-semibold text-slate-900">Ordens de Serviço ({ fmt.Sprintf("%d", len(osList)) })</h2>
+		<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+			<table id="sprint-os-table" class="w-full min-w-[1280px] border-collapse">
+				<thead class="bg-slate-50">
+					<tr>
+						<th class="w-10 px-3 py-2.5 text-left text-xs font-medium text-slate-600">#</th>
+						<th class="w-24 px-3 py-2.5 text-left text-xs font-medium text-slate-600">Código</th>
+						<th class="min-w-[260px] px-3 py-2.5 text-left text-xs font-medium text-slate-600">Descrição</th>
+						<th class="w-44 px-3 py-2.5 text-left text-xs font-medium text-slate-600 whitespace-nowrap">Tipo</th>
+						<th class="w-20 px-3 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">UST</th>
+						<th class="w-20 px-3 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">Rec.</th>
+						<th class="w-24 px-3 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">Comp.</th>
+						<th class="w-24 px-3 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">UST Final</th>
+						<th class="min-w-[180px] px-3 py-2.5 text-left text-xs font-medium text-slate-600">Observação</th>
+						<th class="w-24 px-3 py-2.5 text-center text-xs font-medium text-slate-600">Candidata</th>
+					</tr>
+				</thead>
+				<tbody>
+					for i, osItem := range osList {
+						<tr class="border-t border-slate-100">
+							<td class="px-3 py-2 text-sm text-slate-500">{ fmt.Sprintf("%d", i+1) }</td>
+							<td class="px-3 py-2 text-sm font-medium text-indigo-600 whitespace-nowrap">{ osItem.CatalogCod }</td>
+							<td class="px-3 py-2 text-sm text-slate-800">{ osDisplayDescription(osItem) }</td>
+							<td class="px-3 py-2 text-sm whitespace-nowrap">
+								<span class={ "badge", getBadgeClass(osItem.OS.Kind) }>{ osKindDisplay(osItem.OS.Kind) }</span>
+							</td>
+							<td class="px-3 py-2 text-center text-sm tabular-nums">{ fmt.Sprintf("%d", osDisplayUSTItem(osItem, osList, catalogs)) }</td>
+							<td class="px-3 py-2 text-center text-sm tabular-nums">{ fmt.Sprintf("%d", osItem.OS.USTRecurrence) }</td>
+							<td class="px-3 py-2 text-center text-sm tabular-nums">{ fmt.Sprintf("%d", osItem.OS.Complexity) }</td>
+							<td class="px-3 py-2 text-center text-sm font-semibold tabular-nums">
+								{ fmt.Sprintf("%d", osDisplayUSTFinal(osItem, osList, catalogs)) }
+							</td>
+							<td class="px-3 py-2 text-sm text-slate-600">
+								if osItem.OS.Observation == "" {
+									—
+								} else {
+									{ osItem.OS.Observation }
+								}
+							</td>
+							<td class="px-3 py-2 text-center text-sm">
+								if osItem.OS.TarefaCandidta == 1 {
+									Sim
+								} else {
+									Não
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<div class="mt-6 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+			<h3 class="mb-2 text-sm font-semibold text-slate-800">Resumo</h3>
+			<div class="grid gap-4 sm:grid-cols-3">
+				<div>
+					<p class="text-xs text-slate-500">Total de OS</p>
+					<p class="text-2xl font-bold text-indigo-700">{ fmt.Sprintf("%d", len(osList)) }</p>
+				</div>
+				<div>
+					<p class="text-xs text-slate-500">UST Total</p>
+					<p class="text-2xl font-bold text-indigo-700">{ fmt.Sprintf("%d", CalculateTotalUST(osList, catalogs)) }</p>
+				</div>
+				<div>
+					<p class="text-xs text-slate-500">Tarefas Candidatas</p>
+					<p class="text-2xl font-bold text-indigo-700">{ fmt.Sprintf("%d", countTarefasCandidatas(osList)) }</p>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ taskOSEditForm(task *repository.Task, project *repository.Project, osList []repository.OSWithCatalog, catalogs []repository.Catalog) {
+	<div
+		id="task-os-editor"
+		data-task-id={ fmt.Sprintf("%d", task.ID) }
+		data-project-id={ fmt.Sprintf("%d", project.ID) }
+		data-sprint-id={ taskSprintIDValue(task) }
+		class="space-y-4"
+	>
+		<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+			<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div class="flex items-start gap-3">
+					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+						<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+							<path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+						</svg>
+					</div>
+					<div>
+						<h2 class="text-lg font-semibold text-slate-900">Editar códigos da OS</h2>
+						<p class="mt-0.5 text-sm text-slate-500">Altere, exclua, reordene e adicione códigos. Observação até 1000 caracteres.</p>
+					</div>
+				</div>
+				<button
+					type="button"
+					data-task-os-save
+					onclick="saveTaskOSEditor()"
+					class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+				>
+					<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+						<path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm11 2H5v10h10V5z"></path>
+						<path d="M7 7a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H8a1 1 0 01-1-1z"></path>
+					</svg>
+					Salvar alterações
+				</button>
+			</div>
+			<div class="mt-4 grid max-w-xl gap-2 border-t border-slate-100 pt-4">
+				<label for="responsavel-select" class="text-sm font-medium text-slate-700">Responsável <span class="text-red-500">*</span></label>
+				<select
+					id="responsavel-select"
+					data-current={ task.Responsavel }
+					class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					onchange="syncResponsavelOther()"
+				>
+					<option value="">Selecione o responsável</option>
+					<option value="Ane Carvalho">Ane Carvalho</option>
+					<option value="Gustavo Goulart">Gustavo Goulart</option>
+					<option value="Murilo Sampaio">Murilo Sampaio</option>
+					<option value="__other__">Outros</option>
+				</select>
+				<div id="responsavel-other-wrap" class="hidden">
+					<input
+						id="responsavel-other"
+						type="text"
+						maxlength="120"
+						placeholder="Digite o nome do responsável"
+						class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					/>
+				</div>
+			</div>
+		</div>
+
+		<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+			<p class="mb-3 text-sm font-medium text-slate-700">Adicionar códigos do catálogo</p>
+			<div class="flex flex-col gap-3 xl:flex-row xl:items-center">
+				<select
+					id="task-os-add-catalog"
+					class="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+				>
+					<option value="">Selecione um código do catálogo</option>
+					for _, item := range catalogs {
+						<option
+							value={ fmt.Sprintf("%d", item.ID) }
+							data-cod={ item.Cod }
+							data-desc={ item.Description }
+							data-ust-normal={ fmt.Sprintf("%d", item.UstNormal) }
+							data-ust-new-tech={ fmt.Sprintf("%d", item.UstNewTech) }
+						>
+							{ item.Cod } — { item.Description }
+						</option>
+					}
+				</select>
+				<button
+					type="button"
+					onclick="addCatalogFromTaskOSSelect()"
+					class="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+				>
+					<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+						<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+					</svg>
+					Adicionar código
+				</button>
+				<div class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-sm text-indigo-800">
+					<svg class="h-4 w-4 shrink-0 text-indigo-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+						<path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+					</svg>
+					<span class="text-slate-600">Total de códigos:</span>
+					<strong id="task-os-code-count">{ taskOSCodeCountLabel(len(osList)) }</strong>
+				</div>
+				<div class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-100/60 px-4 py-2.5 text-sm text-indigo-900">
+					<svg class="h-4 w-4 shrink-0 text-indigo-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+						<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.617.923l-.383.383a1 1 0 101.414 1.414l.383-.383A2.535 2.535 0 0111 5.092V5zM5.072 8.072a1 1 0 011.414 0l.383.383A2.535 2.535 0 017.092 10H7a1 1 0 100 2h.092a2.535 2.535 0 001.617.923l.383.383a1 1 0 11-1.414 1.414l-.383-.383A4.535 4.535 0 015 11.092V11a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.617.923l-.383.383a1 1 0 11-1.414-1.414l.383-.383A2.535 2.535 0 013 11.092V11a1 1 0 112 0v.092a2.535 2.535 0 001.617.923l.383.383a1 1 0 01-1.414 1.414l-.383-.383A4.535 4.535 0 015 9.908V10a1 1 0 10-2 0v-.092a4.535 4.535 0 001.617-.923l.383-.383a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+					</svg>
+					<span class="text-slate-600">UST Final total:</span>
+					<strong id="task-os-ust-final-total" class="tabular-nums">{ fmt.Sprintf("%d", CalculateTotalUST(osList, catalogs)) }</strong>
+				</div>
+			</div>
+		</div>
+
+		<div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+			<div class="overflow-x-auto">
+				<table class="min-w-[1280px] w-full text-sm" id="task-os-edit-table">
+					<thead class="bg-slate-50">
+						<tr>
+							<th class="w-14 px-2 py-2.5 text-left text-xs font-medium text-slate-600">Ordem</th>
+							<th class="w-24 px-2 py-2.5 text-left text-xs font-medium text-slate-600">Código</th>
+							<th class="min-w-[220px] px-2 py-2.5 text-left text-xs font-medium text-slate-600">Descrição</th>
+							<th class="w-36 px-2 py-2.5 text-left text-xs font-medium text-slate-600 whitespace-nowrap">Tipo</th>
+							<th class="w-16 px-2 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">UST</th>
+							<th class="w-14 px-2 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">Rec.</th>
+							<th class="w-14 px-2 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">Comp.</th>
+							<th class="w-20 px-2 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">UST Final</th>
+							<th class="min-w-[180px] px-2 py-2.5 text-left text-xs font-medium text-slate-600">Observação</th>
+							<th class="w-24 px-2 py-2.5 text-center text-xs font-medium text-slate-600 whitespace-nowrap">Candidata</th>
+							<th class="w-20 px-2 py-2.5 text-center text-xs font-medium text-slate-600">Ações</th>
+						</tr>
+					</thead>
+					<tbody id="task-os-edit-tbody">
+						for i, osItem := range osList {
+							{{ ustNormal, ustNewTech := catalogUSTPairForOS(catalogs, osItem) }}
+							<tr
+								class="task-os-row border-t border-slate-100 hover:bg-slate-50/60"
+								data-os-id={ fmt.Sprintf("%d", osItem.OS.ID) }
+								data-catalog-id={ fmt.Sprintf("%d", osItem.OS.CatalogID) }
+								data-catalog-cod={ osItem.CatalogCod }
+								data-catalog-desc={ osItem.CatalogDescription }
+								data-ust-normal={ fmt.Sprintf("%d", ustNormal) }
+								data-ust-new-tech={ fmt.Sprintf("%d", ustNewTech) }
+							>
+								<td class="px-2 py-2 align-middle">
+									<div class="flex items-center gap-0.5">
+										<button type="button" class="task-os-drag-handle flex h-8 w-8 cursor-grab items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600" title="Arrastar para reordenar" draggable="true">
+											<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+												<path d="M7 5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM7 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM7 15a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 5a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 15a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"></path>
+											</svg>
+										</button>
+										<span class="task-os-row-num w-4 text-center text-xs font-medium tabular-nums text-slate-400">{ fmt.Sprintf("%d", i+1) }</span>
+									</div>
+								</td>
+								<td class="px-2 py-2 align-middle text-sm font-semibold text-indigo-700 whitespace-nowrap">{ osItem.CatalogCod }</td>
+								<td class="px-2 py-2 align-middle">
+									<textarea class="os-desc task-os-field-compact w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-800" rows="2">{ osDisplayDescription(osItem) }</textarea>
+								</td>
+								<td class="px-2 py-2 align-middle">
+									<select class="os-kind w-full max-w-[9rem] rounded-lg border border-slate-200 px-2 py-1.5 text-sm">
+										if osItem.OS.Kind == "nova_tecnologia" || osItem.OS.Kind == "ajuste" {
+											<option value="normal">Normal</option>
+											<option value="nova_tecnologia" selected>Nova tecnologia</option>
+										} else {
+											<option value="normal" selected>Normal</option>
+											<option value="nova_tecnologia">Nova tecnologia</option>
+										}
+									</select>
+								</td>
+								<td class="px-2 py-2 align-middle text-center">
+									<input type="number" min="1" class="os-ust-item os-num-input rounded-lg border border-slate-200 bg-slate-50 px-1 py-1.5 text-sm tabular-nums text-slate-700" value={ fmt.Sprintf("%d", osDisplayUSTItem(osItem, osList, catalogs)) } readonly title="UST do catálogo conforme o Tipo"/>
+								</td>
+								<td class="px-2 py-2 align-middle text-center">
+									<input type="number" min="1" class="os-ust-rec os-num-input rounded-lg border border-slate-200 px-1 py-1.5 text-sm tabular-nums" value={ fmt.Sprintf("%d", osItem.OS.USTRecurrence) }/>
+								</td>
+								<td class="px-2 py-2 align-middle text-center">
+									<input type="number" min="1" max="10" class="os-complexity os-num-input rounded-lg border border-slate-200 px-1 py-1.5 text-sm tabular-nums" value={ fmt.Sprintf("%d", osItem.OS.Complexity) }/>
+								</td>
+								<td class="px-2 py-2 align-middle text-center">
+									<input type="number" min="1" class="os-ust-final os-num-input rounded-lg border border-slate-200 bg-slate-50 px-1 py-1.5 text-sm font-medium tabular-nums text-slate-700" value={ fmt.Sprintf("%d", osDisplayUSTFinal(osItem, osList, catalogs)) } readonly title="UST × Rec. × Comp."/>
+								</td>
+								<td class="px-2 py-2 align-middle">
+									<textarea class="os-obs task-os-field-compact w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" rows="1" maxlength="1000" placeholder="Observação (até 1000)">{ osItem.OS.Observation }</textarea>
+								</td>
+								<td class="px-2 py-2 align-middle text-center">
+									<select class="os-candidata rounded-lg border border-slate-200 px-2 py-1.5 text-sm">
+										if osItem.OS.TarefaCandidta == 1 {
+											<option value="0">Não</option>
+											<option value="1" selected>Sim</option>
+										} else {
+											<option value="0" selected>Não</option>
+											<option value="1">Sim</option>
+										}
+									</select>
+								</td>
+								<td class="px-2 py-2 align-middle">
+									<div class="flex items-center justify-center gap-1">
+										<button type="button" class="task-os-focus-row flex h-8 w-8 items-center justify-center rounded-lg text-indigo-600 hover:bg-indigo-50" title="Editar descrição" onclick="focusTaskOSRow(this)">
+											<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+												<path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+											</svg>
+										</button>
+										<button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 hover:bg-red-50" title="Excluir" onclick="removeTaskOSRow(this)">
+											<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+												<path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path>
+											</svg>
+										</button>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			<div class="flex items-center gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+				<svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+					<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+				</svg>
+				Arraste os itens para reordenar a lista.
+			</div>
+		</div>
+		<div id="task-os-message" class="text-sm"></div>
+		<div id="task-os-catalogs-json" hidden>
+			@templ.Raw(catalogsJSON(catalogs))
+		</div>
+	</div>
+}
+
+func taskSprintIDValue(task *repository.Task) string {
+	if task == nil || !task.SprintID.Valid {
+		return ""
+	}
+	return fmt.Sprintf("%d", task.SprintID.Int64)
+}
+
+func catalogsJSON(catalogs []repository.Catalog) string {
+	type item struct {
+		ID         int    `json:"id"`
+		Cod        string `json:"cod"`
+		Desc       string `json:"desc"`
+		UstNormal  int    `json:"ustNormal"`
+		UstNewTech int    `json:"ustNewTech"`
+	}
+	out := make([]item, 0, len(catalogs))
+	for _, c := range catalogs {
+		out = append(out, item{ID: c.ID, Cod: c.Cod, Desc: c.Description, UstNormal: c.UstNormal, UstNewTech: c.UstNewTech})
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "[]"
+	}
+	return string(b)
+}
+
+func catalogUSTPair(catalogs []repository.Catalog, catalogID int) (int, int) {
+	for _, c := range catalogs {
+		if c.ID == catalogID {
+			newTech := c.UstNewTech
+			if newTech <= 0 {
+				// Fallback when catalog still has no New Tech: 1.5× Normal
+				newTech = int(float64(c.UstNormal)*1.5 + 0.5)
+				if newTech <= 0 {
+					newTech = c.UstNormal
+				}
+			}
+			return c.UstNormal, newTech
+		}
+	}
+	return 0, 0
+}
+
+func catalogUSTPairForOS(catalogs []repository.Catalog, osItem repository.OSWithCatalog) (int, int) {
+	ustNormal, ustNewTech := catalogUSTPair(catalogs, osItem.OS.CatalogID)
+	if ustNormal > 0 {
+		return ustNormal, ustNewTech
+	}
+	cod := strings.ToUpper(strings.TrimSpace(osItem.CatalogCod))
+	if cod == "" {
+		return 0, 0
+	}
+	for _, c := range catalogs {
+		if strings.ToUpper(strings.TrimSpace(c.Cod)) == cod {
+			newTech := c.UstNewTech
+			if newTech <= 0 {
+				newTech = int(float64(c.UstNormal)*1.5 + 0.5)
+				if newTech <= 0 {
+					newTech = c.UstNormal
+				}
+			}
+			return c.UstNormal, newTech
+		}
+	}
+	return 0, 0
+}
+
+func osDisplayDescription(item repository.OSWithCatalog) string {
+	custom := strings.TrimSpace(item.OS.Description)
+	catalog := strings.TrimSpace(item.CatalogDescription)
+	if catalog == "" {
+		return custom
+	}
+	if custom == "" {
+		return catalog
+	}
+	if len(custom) < 30 && len(catalog) > len(custom) {
+		return catalog
+	}
+	return custom
+}
+
+func enc02RecFromOSList(osList []repository.OSWithCatalog) int {
+	for _, item := range osList {
+		if strings.ToUpper(strings.TrimSpace(item.CatalogCod)) == "ENC02" {
+			rec := item.OS.USTRecurrence
+			if rec <= 0 {
+				rec = 1
+			}
+			return rec
+		}
+	}
+	return 0
+}
+
+func ustFromCatalogKind(ustNormal, ustNewTech int, kind string) int {
+	if ustNormal <= 0 {
+		return 0
+	}
+	k := strings.ToLower(strings.TrimSpace(kind))
+	if k == "nova_tecnologia" || k == "ajuste" {
+		if ustNewTech > 0 {
+			return ustNewTech
+		}
+		return ustNormal
+	}
+	return ustNormal
+}
+
+func osDisplayUSTItem(osItem repository.OSWithCatalog, osList []repository.OSWithCatalog, catalogs []repository.Catalog) int {
+	if strings.ToUpper(strings.TrimSpace(osItem.CatalogCod)) == "ENC04" {
+		if rec := enc02RecFromOSList(osList); rec > 0 {
+			return rec
+		}
+	}
+	ustNormal, ustNewTech := catalogUSTPairForOS(catalogs, osItem)
+	if ustNormal > 0 {
+		return ustFromCatalogKind(ustNormal, ustNewTech, osItem.OS.Kind)
+	}
+	return osItem.OS.USTItem
+}
+
+func osDisplayUSTFinal(osItem repository.OSWithCatalog, osList []repository.OSWithCatalog, catalogs []repository.Catalog) int {
+	ust := osDisplayUSTItem(osItem, osList, catalogs)
+	rec := osItem.OS.USTRecurrence
+	if rec <= 0 {
+		rec = 1
+	}
+	comp := osItem.OS.Complexity
+	if comp <= 0 {
+		comp = 1
+	}
+	return ust * rec * comp
+}
+
+func sprintsTotalTasks(sprints []SprintWithTasks) int {
+	total := 0
+	for _, s := range sprints {
+		total += len(s.Tasks)
+	}
+	return total
+}
+
+func responsavelInitials(name string) string {
+	return ResponsavelInitials(name)
+}
+
+func ResponsavelInitials(name string) string {
+	parts := strings.Fields(strings.TrimSpace(name))
+	if len(parts) == 0 {
+		return "?"
+	}
+	first := []rune(parts[0])
+	if len(parts) == 1 {
+		if len(first) >= 2 {
+			return strings.ToUpper(string(first[:2]))
+		}
+		return strings.ToUpper(string(first[0]))
+	}
+	last := []rune(parts[len(parts)-1])
+	return strings.ToUpper(string(first[0]) + string(last[0]))
+}
+
+func responsavelColorKey(name string) string {
+	n := strings.ToLower(strings.TrimSpace(name))
+	switch n {
+	case "ane carvalho":
+		return "rose"
+	case "gustavo goulart":
+		return "sky"
+	case "murilo sampaio":
+		return "violet"
+	default:
+		sum := 0
+		for _, r := range n {
+			sum += int(r)
+		}
+		switch sum % 5 {
+		case 0:
+			return "rose"
+		case 1:
+			return "sky"
+		case 2:
+			return "emerald"
+		case 3:
+			return "amber"
+		default:
+			return "violet"
+		}
+	}
+}
+
+func responsavelAvatarClass(name string) string {
+	switch responsavelColorKey(name) {
+	case "rose":
+		return "bg-rose-100 text-rose-700"
+	case "sky":
+		return "bg-sky-100 text-sky-700"
+	case "emerald":
+		return "bg-emerald-100 text-emerald-700"
+	case "amber":
+		return "bg-amber-100 text-amber-800"
+	default:
+		return "bg-violet-100 text-violet-700"
+	}
+}
+
+func responsavelPillClass(name string) string {
+	switch responsavelColorKey(name) {
+	case "rose":
+		return "border-rose-200 bg-rose-50 text-rose-800"
+	case "sky":
+		return "border-sky-200 bg-sky-50 text-sky-800"
+	case "emerald":
+		return "border-emerald-200 bg-emerald-50 text-emerald-800"
+	case "amber":
+		return "border-amber-200 bg-amber-50 text-amber-900"
+	default:
+		return "border-violet-200 bg-violet-50 text-violet-800"
+	}
+}
+
+func sprintsTotalUSTFinal(sprints []SprintWithTasks) int {
+	total := 0
+	for _, s := range sprints {
+		total += s.USTFinalTotal
+	}
+	return total
+}
+
+func sprintsInProgressCount(sprints []SprintWithTasks) int {
+	count := 0
+	for _, s := range sprints {
+		if s.Sprint.Status() == "Em andamento" {
+			count++
+		}
+	}
+	return count
+}
+
+func sprintTaskCountLabel(count int) string {
+	if count == 1 {
+		return "1 tarefa"
+	}
+	return fmt.Sprintf("%d tarefas", count)
+}
+
 func getBadgeClass(kind string) string {
-	switch kind {
-	case "Nova Funcionalidade":
-		return "badge-primary"
-	case "Melhoria":
+	switch strings.ToLower(strings.TrimSpace(kind)) {
+	case "nova_tecnologia", "nova tecnologia", "ajuste":
 		return "badge-info"
-	case "Correção":
-		return "badge-warning"
-	case "Refatoração":
-		return "badge-secondary"
+	case "normal":
+		return "badge-primary"
 	default:
 		return "badge-ghost"
+	}
+}
+
+func osKindDisplay(kind string) string {
+	switch strings.ToLower(strings.TrimSpace(kind)) {
+	case "nova_tecnologia", "nova tecnologia", "ajuste":
+		return "Nova tecnologia"
+	default:
+		return "Normal"
 	}
 }
 
@@ -326,12 +1078,10 @@ func getComplexityBadgeClass(complexity int) string {
 	return "badge-error"
 }
 
-func calculateTotalUST(osList []repository.OSWithCatalog) int {
+func CalculateTotalUST(osList []repository.OSWithCatalog, catalogs []repository.Catalog) int {
 	total := 0
 	for _, osItem := range osList {
-		if osItem.OS.USTEnd != nil {
-			total += *osItem.OS.USTEnd
-		}
+		total += osDisplayUSTFinal(osItem, osList, catalogs)
 	}
 	return total
 }
@@ -346,6 +1096,17 @@ func countTarefasCandidatas(osList []repository.OSWithCatalog) int {
 	return count
 }
 
+func taskOSCodeCountLabel(count int) string {
+	if count == 1 {
+		return "1 código adicionado"
+	}
+	return fmt.Sprintf("%d códigos adicionados", count)
+}
+
+script copyTaskName(name string) {
+	navigator.clipboard.writeText(name);
+}
+
 script exportToExcel(taskID int, taskName string, projectName string, deliveryDate string) {
 	// Coletar dados da tabela
 	const osData = [];
@@ -353,22 +1114,19 @@ script exportToExcel(taskID int, taskName string, projectName string, deliveryDa
 
 	tableRows.forEach((row) => {
 		const cells = row.querySelectorAll('td');
-		if (cells.length >= 11) {
-			// Extrair badge text corretamente
-			const kindBadge = cells[4].querySelector('.badge');
-			const complexityBadge = cells[7].querySelector('.badge');
-			const tarefaCandidataBadge = cells[9].querySelector('.badge');
-
+		if (cells.length >= 10) {
+			const kindBadge = cells[3].querySelector('.badge');
+			const observationText = cells[8].textContent.trim();
 			const osItem = {
 				catalogCod: cells[1].textContent.trim(),
 				catalogDescription: cells[2].textContent.trim(),
-				description: cells[3].textContent.trim(),
-				kind: kindBadge ? kindBadge.textContent.trim() : '',
-				ustItem: parseInt(cells[5].textContent.trim()) || 0,
-				ustRecurrence: parseInt(cells[6].textContent.trim()) || 0,
-				complexity: complexityBadge ? parseInt(complexityBadge.textContent.trim()) : 0,
-				ustEnd: cells[8].textContent.trim() === '-' ? 0 : parseInt(cells[8].textContent.trim()) || 0,
-				tarefaCandidta: tarefaCandidataBadge && tarefaCandidataBadge.textContent.trim() === 'Sim' ? 1 : 0
+				observation: observationText === '—' ? '' : observationText,
+				kind: kindBadge ? kindBadge.textContent.trim() : cells[3].textContent.trim(),
+				ustItem: parseInt(cells[4].textContent.trim()) || 0,
+				ustRecurrence: parseInt(cells[5].textContent.trim()) || 0,
+				complexity: parseInt(cells[6].textContent.trim()) || 0,
+				ustEnd: cells[7].textContent.trim() === '-' ? 0 : parseInt(cells[7].textContent.trim()) || 0,
+				tarefaCandidta: cells[9].textContent.trim() === 'Sim' ? 1 : 0
 			};
 			osData.push(osItem);
 		}
